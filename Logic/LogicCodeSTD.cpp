@@ -260,7 +260,7 @@ bool LogicCode::Std::Case(Light::List& current, VariableData& vars, bool& ret)
 
 void LogicCode::Std::_AddBitArray(std::bitsetdynamic& bitset)
 {
-    auto len = bitset.length();
+    auto len = bitset.size();
     for (size_t i = 0; i < len; i++)
     {
         auto current = bitset.get(i);

@@ -1,2 +1,2 @@
-A = true
-C = (xor true false true)
+const A = true
+C = (xor A false A)
