@@ -24,8 +24,8 @@ Functions can be defined using the `fun` keyword. They allow grouping a set of l
 Example:
 ```
 fun mylogic(a, b) (
-    b1 = and(not a, not b);
-    b2 = and(not a, b);
+    b1 = and(not(a), not(b));
+    b2 = and(not(a), b);
     return or(b1, b2);
 );
 ```
@@ -80,8 +80,8 @@ A = true;
 B = false;
 
 fun mylogic(a, b) (
-    b1 = and(not a, not b);
-    b2 = and(not a, b);
+    b1 = and(not(a), not(b));
+    b2 = and(not(a), b);
     return or(b1, b2);
 );
 
