@@ -1,14 +1,14 @@
 #pragma once
 #include "VariableData.h"
+#include <memory>
+#include "refcount_ptr.h"
 namespace LogicCode::Helper
 {
 	
-	const char* ToStr(bool v);
-	const char* ToStr2(bool v);
-
-	bool ToBool(Light::CommandResult& command, VariableData& vars, bool& ret);
-	bool GetValue(Light::List& current, VariableData& vars, bool& ret);
-	VariableData IntrepreterLogic(Light::Expression& token);
-	void ExecuteExpression(Light::Expression& expression, VariableData& vars, bool& ret);
+	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> ToBitSet(LogicCodeState* state,Light::CommandResult& command);
+	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> GetValue(LogicCodeState* state,Light::List& current);
+	std::refcount_ptr<LogicCodeState> IntrepreterLogic(Light::Expression& token);
+	void ExecuteExpression(LogicCodeState* state,Light::Expression& expression);
+	 
 };
 

@@ -1,13 +1,20 @@
 #pragma once
 #include <vector>
-
+#include <string>
+#include "refcount_ptr.h"
 namespace std
 {
+
 	class bitsetdynamic
 	{
+    public:
+        typedef unsigned long long Bits;
 	private:
-		vector<unsigned long long> _bits;
 		size_t _size;
+        inline Bits* _bits()
+        {
+            return (Bits*)(this + 1);
+        }
         void Validate(int i)
         {
             if (i >= _size)
@@ -17,25 +24,21 @@ namespace std
                 throw "i < 0";
             }
         }
+       
 	public:
-		bitsetdynamic(size_t n)
-		{
-			_size = n;
-			_bits.resize((n + 63) / 64); // Round
-		}
-        bitsetdynamic()
+        using refcount_elem = std::RefCount<bitsetdynamic>;
+        using refcount_ptr_elem = std::refcount_ptr<bitsetdynamic, bitsetdynamic>;
+        inline bitsetdynamic()
         {
             _size = 0;
         }
-        bitsetdynamic(bitsetdynamic& v)
+        inline ~bitsetdynamic()
         {
-            _size = v._size;
-            _bits = v._bits;
+            _size = 0;
         }
-        bitsetdynamic(bitsetdynamic&& v) noexcept
+        inline Bits* data()
         {
-            _size = v._size;
-            _bits = v._bits;
+            return _bits();
         }
         void set(int i, bool value) {
             Validate(i);
@@ -45,10 +48,10 @@ namespace std
             unsigned long long mask = 1ULL << bit;
 
             if (value) {
-                _bits[block] |= mask;
+                _bits()[block] |= mask;
             }
             else {
-                _bits[block] &= ~mask;
+                _bits()[block] &= ~mask;
             }
         }
         
@@ -60,11 +63,102 @@ namespace std
 
             unsigned long long mask = 1ULL << bit;
 
-            return (_bits[block] & mask) != 0;
+            return (_bits()[block] & mask) != 0;
         }
-        size_t size()
+        size_t inline size()
         {
             return _size;
+        }
+        std::string to_string()
+        {
+            auto len = _size;
+            std::string str;
+            str.reserve(len);
+            for (size_t i = 0; i < len; i++)
+            {
+                str.push_back(get(i) == true ? '1' : '0');
+            }
+            return str;
+        }
+        static refcount_elem* New(bool v)
+        {
+            auto lenmalloc = sizeof(refcount_elem) + sizeof(Bits);
+            auto ret = malloc_t<refcount_elem>(lenmalloc);
+            memset(ret, 0, lenmalloc);
+            ret->count = 0;
+            ret->obj._size = 1;
+            ret->obj.set(0, v);
+            
+            return ret;
+        }
+        static refcount_elem* New(size_t len)
+        {
+            auto lenarr = (len + 63) / 64;
+            auto lenmalloc = sizeof(refcount_elem) + sizeof(Bits) * lenarr;
+            auto ret = malloc_t<refcount_elem>(lenmalloc);
+            memset(ret,0,lenmalloc);
+            ret->count = 0;
+            ret->obj._size = len;
+            return ret;
+        }
+        static refcount_elem* New(Bits* v, size_t n)
+        {
+            if (v == NULL)
+            {
+                return NULL;
+            }
+            auto lenarr = (n + 63) / 64;
+
+            auto lenmalloc = sizeof(refcount_elem) + sizeof(Bits);
+            auto ret = malloc_t<refcount_elem>(lenmalloc);
+            ret->count = 0;
+            ret->obj._size = n;
+
+            memcpy(ret->obj._bits(), v, (n + 63) / 64);
+
+            return ret;
+
+        }
+        static refcount_elem* New()
+        {
+            auto lenmalloc = sizeof(refcount_elem);
+            auto ret = malloc_t<refcount_elem>(lenmalloc);
+            ret->count = 0;
+            ret->obj._size = 0;
+
+            return ret;
+
+        }
+        static inline refcount_ptr_elem Make()
+        {
+            return refcount_ptr_elem::make();
+        }
+        static inline refcount_ptr_elem Make(bool v)
+        {
+            return refcount_ptr_elem::make(v);
+        }
+        static inline refcount_ptr_elem Make(size_t len)
+        {
+            return refcount_ptr_elem::make(len);
+        }
+        static inline refcount_ptr_elem Make(Bits* v, size_t n)
+        {
+            return refcount_ptr_elem::make(v,n);
+        }
+        static inline void Free(refcount_elem* _this)
+        {
+            if (_this != NULL)
+            {
+                free(_this);
+            }
+        }
+        static inline refcount_ptr_elem Copy(refcount_ptr_elem&& v)
+        {
+            return Make(v->data(), v->size());
+        }
+        static inline refcount_ptr_elem Copy(refcount_ptr_elem& v)
+        {
+            return Make(v->data(), v->size());
         }
 	};
 }

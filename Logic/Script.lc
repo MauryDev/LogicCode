@@ -1,2 +1,2 @@
-const A = true
-C = (xor A false A)
+
+print(mux(i8 0,true,false));

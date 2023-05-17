@@ -2,26 +2,40 @@
 #include <Light.h>
 #include "VariableData.h"
 #include "bitsetdynamic.h"
-
+#include "LogicCodeHelper.h"
 namespace LogicCode::Std
 {
-	bool And(Light::List& current, VariableData& vars, bool& ret);
-	bool Or(Light::List& current, VariableData& vars, bool& ret);
-	bool Not(Light::List& current, VariableData& vars, bool& ret);
-	bool Xor(Light::List& current, VariableData& vars, bool& ret);
-	bool Nand(Light::List& current, VariableData& vars, bool& ret);
-	bool Nor(Light::List& current, VariableData& vars, bool& ret);
-	bool Xnor(Light::List& current, VariableData& vars, bool& ret);
-	void If(Light::List& current, VariableData& vars, bool& ret);
-	void While(Light::List& current, VariableData& vars, bool& ret);
-	void Fun(Light::List& current, VariableData& vars, bool& ret);
-	void Return(Light::List& current, VariableData& vars, bool& ret);
-	void Print(Light::List& current, VariableData& vars, bool& ret);
-	void Const(Light::List& current, VariableData& vars, bool& ret);
-	bool Case(Light::List& current, VariableData& vars, bool& ret);
-	
-	void _AddBitArray(std::bitsetdynamic& bitset);
-	void TruthTable(Light::List& current, VariableData& vars, bool& ret);
+	struct RefValue
+	{
+		LogicCodeState* state;
+
+		const char* str();
+		static std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> NewBitSet(LogicCodeState* state,Light::string_view& str);
+	};
+	void And(FunctionData* __this, LogicCodeState* state);
+	void Or(FunctionData* __this, LogicCodeState* state);
+	void Not(FunctionData* __this, LogicCodeState* state);
+	void Xor(FunctionData* __this, LogicCodeState* state);
+	void Nand(FunctionData* __this, LogicCodeState* state);
+	void Xnor(FunctionData* __this, LogicCodeState* state);
+	void Nor(FunctionData* __this, LogicCodeState* state);
+	void Xnor(FunctionData* __this, LogicCodeState* state);
+	void If(LogicCodeState* state,Light::List& current);
+	void While(LogicCodeState* state, Light::List& current);
+	void Fun(LogicCodeState* state, Light::List& current);
+	void Return(LogicCodeState* state, Light::List& current);
+	void Print(FunctionData* __this, LogicCodeState* state);
+	void Const(LogicCodeState* state, Light::List& current);
+	void Case(LogicCodeState* state, Light::List& current);
+	void Buffer(FunctionData* __this, LogicCodeState* state);
+	void Zero(FunctionData* __this, LogicCodeState* state);
+	void One(FunctionData* __this, LogicCodeState* state);
+	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> i8(LogicCodeState* state, Light::List& current);
+	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> Ref(LogicCodeState* state, Light::List& current);
+	void Mux(FunctionData* __this, LogicCodeState* state);
+
+	// mux,demux,Decoder,SelectBit,Add,Sub,Mul,Div
+	void __Init(LogicCodeState* state);
 
 };
 

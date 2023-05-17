@@ -1,199 +1,220 @@
 #include "LogicCodeHelper.h"
 #include "LogicCodeSTD.h"
 #include <iostream>
-const char* LogicCode::Helper::ToStr(bool v)
+#include <memory>
+
+std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state, Light::CommandResult& command)
 {
-    return v ? "true" : "false";
+	if (command.resultType == Light::ResultType::Number)
+	{
+		auto number = command.str;
+		auto numberlen = number->size();
+		auto v = std::bitsetdynamic::Make(numberlen);
+		for (size_t i = 0; i < numberlen; i++)
+		{
+			v->set(i, number->at(i) != '0');
+		}
+		return v;
+	}
+	else if (command.resultType == Light::ResultType::Label)
+	{
+		auto str = command.str;
+
+		if (str->Equals("true") || str->Equals("TRUE"))
+		{
+			return std::bitsetdynamic::Make(true);
+		}
+		else if (str->Equals("false") || str->Equals("FALSE"))
+		{
+			return std::bitsetdynamic::Make(false);
+		}
+		else
+		{
+			return state->vd.GetValue(str->data());
+		}
+	}
+	else if (command.resultType == Light::ResultType::Expression)
+	{
+		auto& exp = command.expression;
+		if (exp->get_Count() == 1)
+		{
+			return GetValue(state, exp->at(0));
+		}
+	}
+	return {};
 }
 
-const char* LogicCode::Helper::ToStr2(bool v)
+
+std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::GetValue(LogicCodeState* state, Light::List& current)
 {
-    return  v ? "true " : "false";
+	auto instructionsize = current.get_Count();
+	auto& statestack = state->stack;
+	auto& statevd = state->vd;
+	if (instructionsize > 0)
+	{
+		auto typeexpr = current[0];
+
+		if (typeexpr.resultType == Light::ResultType::Label)
+		{
+			auto& currentopcode = typeexpr.str;
+			if (currentopcode->Equals("if"))
+			{
+				Std::If(state, current);
+			}
+			else if (currentopcode->Equals("while"))
+			{
+				Std::While(state, current);
+
+			}
+			else if (currentopcode->Equals("fun"))
+			{
+				Std::Fun(state, current);
+			}
+			else if (currentopcode->Equals("return"))
+			{
+				Std::Return(state, current);
+			}
+
+			else if (currentopcode->Equals("const"))
+			{
+				Std::Const(state, current);
+			}
+			else if (currentopcode->Equals("case"))
+			{
+				Std::Case(state, current);
+			}
+			else if (currentopcode->Equals("i8"))
+			{
+				return Std::i8(state, current);
+			}
+			else if (currentopcode->Equals("ref"))
+			{
+				return Std::Ref(state, current);
+			}
+			else
+			{
+				if (instructionsize >= 3)
+				{
+					auto type = current[1];
+
+					if (type.resultType == Light::ResultType::Operador)
+					{
+						if (*type.coperator == Light::COperator::Set)
+						{
+							Light::List values(instructionsize - 2, &current.at(2));
+							for (size_t i = 2; i < instructionsize; i++)
+							{
+								values.Add(current[i]);
+							}
+							auto v2 = GetValue(state, values);
+							statevd.SetVar(currentopcode->data(), v2);
+
+						}
+					}
+				}
+				else if (instructionsize == 2)
+				{
+					auto type = current[1];
+					if (type.resultType == Light::ResultType::Expression)
+					{
+						auto expression = type.expression;
+						auto getfn = statevd.GetFunction(currentopcode->data());
+
+						if (getfn->type != FunctionData::FunctionType::None)
+						{
+
+
+							if (getfn->type == FunctionData::FunctionType::Runtime)
+							{
+								auto parent = getfn->state;
+								VariableData vd;
+
+								LogicCodeState currentstate;
+								currentstate.ret = false;
+								currentstate.vd.parent = &parent->vd;
+
+								auto& args = getfn->get_runtimefn().argsname;
+								auto expressionlen = args.size();
+
+								for (size_t i = 0; i < expressionlen; i++)
+								{
+									vd.SetConst(args[i], GetValue(state, expression->at(i)));
+								}
+								ExecuteExpression(&currentstate, *getfn->get_runtimefn().body);
+								return  currentstate.vd.ret;
+							}
+							else if (getfn->type == FunctionData::FunctionType::Native)
+							{
+								auto expressionlen = expression->get_Count();
+								auto oldoffset = statestack.get_Offset();
+								statestack.set_Offset(statestack.size());
+								for (size_t i = 0; i < expressionlen; i++)
+								{
+
+									statestack.push(GetValue(state, expression->at(i)));
+								}
+								getfn->get_nativefn().callback(getfn.get(), state);
+								auto toremove = statestack.sizeoffset();
+								for (size_t i = 0; i < toremove; i++)
+								{
+									state->stack.pop();
+								}
+								statestack.set_Offset(oldoffset);
+
+								return statevd.ret;
+							}
+						}
+					}
+				}
+			}
+
+
+			
+		}
+		if (instructionsize == 1)
+		{
+			return ToBitSet(state, current[0]);
+		}
+
+	}
+	return {};
+
 }
 
-bool LogicCode::Helper::ToBool(Light::CommandResult& command, VariableData& vars, bool& ret)
+std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Expression& token)
 {
-    if (command.resultType == Light::ResultType::Number)
-    {
-        auto number = command.ToInt();
+	auto state = std::refcount_ptr<LogicCodeState>::make();
+	
+	state->vd.parent = NULL;
+	state->ret = false;
+	Std::__Init(state.get());
 
-        return number != 0;
-    }
-    else if (command.resultType == Light::ResultType::Label)
-    {
-        auto str = command.str;
-
-        if (str->Equals("true") || str->Equals("TRUE"))
-        {
-            return true;
-        }
-        else if (str->Equals("false") || str->Equals("FALSE"))
-        {
-            return false;
-        }
-        else
-        {
-            return vars.GetValue(str->data());
-        }
-    }
-    else if (command.resultType == Light::ResultType::Expression)
-    {
-        auto& exp = command.expression;
-        if (exp->get_Count() == 1)
-        {
-            return GetValue(exp->at(0), vars, ret);
-        }
-    }
-    return false;
+	ExecuteExpression(state.get(), token);
+	return state;
 }
 
-bool LogicCode::Helper::GetValue(Light::List& current, VariableData& vars, bool& ret)
+void LogicCode::Helper::ExecuteExpression(LogicCodeState* state, Light::Expression& expression)
 {
-    auto instructionsize = current.get_Count();
-    if (instructionsize > 0)
-    {
-        auto& currentopcode = current[0].str;
-        if (currentopcode->Equals("and"))
-        {
-            return Std::And(current, vars, ret);
-            
-        }
-        else if (currentopcode->Equals("or"))
-        {
-            return Std::Or(current, vars, ret);
-        }
-        else if (currentopcode->Equals("not"))
-        {
-            return Std::Not(current, vars, ret);
-        }
-        else if (currentopcode->Equals("xor"))
-        {
-            return Std::Xor(current, vars, ret);
+	auto count = expression.get_Count();
 
-        }
-        else if (currentopcode->Equals("nand"))
-        {
-            return Std::Nand(current, vars, ret);
+	for (size_t i = 0; i < count; i++)
+	{
+		if (state->ret)
+		{
+			break;
+		}
+		auto& current = expression[i];
 
-        }
-        else if (currentopcode->Equals("nor"))
-        {
-            return Std::Nor(current, vars, ret);
+		auto oldoffset = state->stack.get_Offset();
+		state->stack.set_Offset(state->stack.size());
 
-        }
-        else if (currentopcode->Equals("xnor"))
-        {
-            return Std::Xnor(current, vars, ret);
+		GetValue(state, current);
 
-        }
-        else if (currentopcode->Equals("if"))
-        {
-            Std::If(current, vars, ret);
-        }
-        else if (currentopcode->Equals("while"))
-        {
-            Std::While(current, vars, ret);
-
-        }
-        else if (currentopcode->Equals("fun"))
-        {
-            Std::Fun(current, vars, ret);
-        }
-        else if (currentopcode->Equals("return"))
-        {
-            Std::Return(current, vars, ret);
-        }
-        else if (currentopcode->Equals("print"))
-        {
-            Std::Print(current, vars, ret);
-        }
-        else if (currentopcode->Equals("const"))
-        {
-            Std::Const(current, vars, ret);
-        }
-        else if (currentopcode->Equals("truthtable"))
-        {
-            Std::TruthTable(current, vars, ret);
-        }
-        else if (currentopcode->Equals("case"))
-        {
-            Std::Case(current, vars, ret);
-        }
-        else if (currentopcode->Equals("true") || currentopcode->Equals("TRUE"))
-        {
-            return true;
-        }
-        else if (currentopcode->Equals("false") || currentopcode->Equals("FALSE"))
-        {
-            return false;
-        }
-        else
-        {
-            if (instructionsize == 3)
-            {
-                auto type = current[1];
-
-                if (type.resultType == Light::ResultType::Operador)
-                {
-                    if (*type.operador == Light::COperator::Set)
-                    {
-                        auto v2 = ToBool(current[2], vars, ret);
-                        vars.SetVar(currentopcode->data(), v2);
-
-                    }
-                }
-                else
-                {
-                    auto getfn = vars.GetFunction(currentopcode->data());
-
-                    if (getfn.body != NULL)
-                    {
-                        VariableData vd;
-                        vd.parent = (VariableData*)getfn.parent;
-                        bool retfn = false;
-                        auto& args = getfn.argsname;
-                        if (instructionsize - 1 == args.size())
-                        {
-                            for (size_t i = 0; i < args.size(); i++)
-                            {
-                                vd.SetConst(args[i], ToBool(current[i + 1], vars, ret));
-                            }
-                            ExecuteExpression(*getfn.body, vd, retfn);
-
-                        }
-                        return vd.ret;
-                    }
-                }
-            }
-
-        }
-
-    }
-
-    return false;
-}
-
-VariableData LogicCode::Helper::IntrepreterLogic(Light::Expression& token)
-{
-    VariableData variables;
-    variables.parent = NULL;
-    bool ret = false;
-    ExecuteExpression(token, variables, ret);
-
-    return variables;
-}
-
-void LogicCode::Helper::ExecuteExpression(Light::Expression& expression, VariableData& vars, bool& ret)
-{
-    auto count = expression.get_Count();
-
-    for (size_t i = 0; i < count; i++)
-    {
-        if (ret)
-        {
-            break;
-        }
-        auto& current = expression[i];
-        GetValue(current, vars, ret);
-    }
+		auto toremove = state->stack.sizeoffset();
+		for (size_t i = 0; i < toremove; i++)
+		{
+			state->stack.pop();
+		}
+		state->stack.set_Offset(oldoffset);
+	}
 }
