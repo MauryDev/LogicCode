@@ -1,27 +1,27 @@
-# Documentação do LogicCode
+# LogicCode Documentation
 
-## Introdução
+## Introduction
 
-O LogicCode é uma linguagem de programação desenvolvida para a criação e simulação de circuitos lógicos. Ela oferece recursos para a definição de portas lógicas, criação de funções, declaração de constantes e variáveis, e manipulação de valores lógicos.
+LogicCode is a programming language developed for the creation and simulation of logical circuits. It provides features for defining logic gates, creating functions, declaring constants and variables, and manipulating logical values.
 
-## Sintaxe
+## Syntax
 
-### Declaração de portas lógicas
+### Logic Gates Declaration
 
-As portas lógicas podem ser declaradas utilizando as palavras-chave `and`, `or`, `not`, `xor`. Elas permitem a combinação de valores lógicos para obter um resultado lógico.
+Logic gates can be declared using the keywords `and`, `or`, `not`, `xor`. They allow combining logical values to obtain a logical result.
 
-Exemplo:
+Example:
 ```
 A = true;
 B = false;
 C = and(A, B);
 ```
 
-### Declaração de funções
+### Function Declaration
 
-As funções podem ser definidas usando a palavra-chave `fun`. Elas permitem agrupar um conjunto de instruções lógicas que podem ser reutilizadas em diferentes partes do código.
+Functions can be defined using the `fun` keyword. They allow grouping a set of logical instructions that can be reused in different parts of the code.
 
-Exemplo:
+Example:
 ```
 fun mylogic(a, b) (
     b1 = and(not a, not b);
@@ -30,31 +30,31 @@ fun mylogic(a, b) (
 );
 ```
 
-### Declaração de constantes
+### Constants Declaration
 
-As constantes podem ser definidas utilizando a palavra-chave `const`. Elas representam valores lógicos fixos que não podem ser modificados durante a execução do programa.
+Constants can be defined using the `const` keyword. They represent fixed logical values that cannot be modified during program execution.
 
-Exemplo:
+Example:
 ```
 const true_value = true;
 const false_value = false;
 ```
 
-### Declaração de variáveis
+### Variables Declaration
 
-As variáveis podem ser declaradas sem a palavra-chave `const`. Elas representam valores lógicos que podem ser modificados durante a execução do programa.
+Variables can be declared without the `const` keyword. They represent logical values that can be modified during program execution.
 
-Exemplo:
+Example:
 ```
 A = true;
 B = false;
 ```
 
-### Impressão de valores
+### Printing Values
 
-Os valores lógicos podem ser impressos utilizando a palavra-chave `print`. Isso permite exibir o resultado de uma operação ou o valor de uma variável no console.
+Logical values can be printed using the `print` keyword. This allows displaying the result of an operation or the value of a variable in the console.
 
-Exemplo:
+Example:
 ```
 A = true;
 B = false;
@@ -62,18 +62,18 @@ C = and(A, B);
 print(C);
 ```
 
-## Funções embutidas
+## Built-in Functions
 
-O LogicCode fornece algumas funções embutidas que podem ser usadas para manipular valores lógicos.
+LogicCode provides some built-in functions that can be used to manipulate logical values.
 
-- `and(x, y)`: Retorna o resultado da operação lógica "E" entre `x` e `y`.
-- `or(x, y)`: Retorna o resultado da operação lógica "OU" entre `x` e `y`.
-- `not(x)`: Retorna o resultado da operação lógica "NÃO" do valor `x`.
-- `xor(x, y)`: Retorna o resultado da operação lógica "OU exclusivo" entre `x` e `y`.
+- `and(x, y)`: Returns the result of the logical "AND" operation between `x` and `y`.
+- `or(x, y)`: Returns the result of the logical "OR" operation between `x` and `y`.
+- `not(x)`: Returns the result of the logical "NOT" operation on the value `x`.
+- `xor(x, y)`: Returns the result of the logical "XOR" operation between `x` and `y`.
 
-## Exemplo completo
+## Complete Example
 
-Aqui está um exemplo completo que demonstra o uso do LogicCode para definir portas lógicas, criar funções e imprimir valores:
+Here's a complete example that demonstrates the use of LogicCode to define logic gates, create functions, and print values:
 
 ```
 A = true;
@@ -89,4 +89,4 @@ C = mylogic(A, B);
 print(C);
 ```
 
-Neste exemplo, declaramos as variáveis `A` e `B` com valores lógicos. Em seguida, definimos a função `mylogic` que realiza operações lógicas com base nos parâmetros `a` e `b`. Finalmente, chamamos a função `mylogic` com os valores
+In this example, we declare the variables `A` and `B` with logical values. Then, we define the function `mylogic` that performs logical operations based on the parameters `a` and `b`. Finally, we call the `mylogic` function with the values `A` and `B` and print the result.
