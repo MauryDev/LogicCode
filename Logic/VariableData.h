@@ -113,7 +113,7 @@ struct FunctionData
 	{
 		auto refcount = std::malloc_t<refcount_elem>(sizeof(refcount_elem) + sizeof(FunctionRuntime));
 		refcount->count = 0;
-		refcount->obj.type = FunctionType::Native;
+		refcount->obj.type = FunctionType::Runtime;
 		refcount->obj.state = state;
 		memset(&refcount->obj.get_runtimefn(), 0, sizeof(FunctionRuntime));
 		refcount->obj.get_runtimefn() = runtime;

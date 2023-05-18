@@ -1,8 +1,5 @@
+fun myfn() @{
+	return true;
+};
 
-
-
-if true @{
-	
-	demux(i8 1,true,ref A,ref B);
-	print(B);
-}
+print(myfn());
