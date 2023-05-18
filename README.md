@@ -23,11 +23,11 @@ Functions can be defined using the `fun` keyword. They allow grouping a set of l
 
 Example:
 ```
-fun mylogic(a, b) (
-    b1 = and(not(a), not(b)),
-    b2 = and(not(a), b),
-    return or(b1, b2)
-);
+fun mylogic(a, b) @{
+    b1 = and(not(a), not(b));
+    b2 = and(not(a), b);
+    return or(b1, b2);
+};
 ```
 
 ### Constants Declaration
@@ -79,11 +79,11 @@ Here's a complete example that demonstrates the use of LogicCode to define logic
 A = true;
 B = false;
 
-fun mylogic(a, b) (
-    b1 = and(not(a), not(b)),
-    b2 = and(not(a), b),
-    return or(b1, b2)
-);
+fun mylogic(a, b) @{
+    b1 = and(not(a), not(b));
+    b2 = and(not(a), b);
+    return or(b1, b2);
+};
 
 C = mylogic(A, B);
 print(C);

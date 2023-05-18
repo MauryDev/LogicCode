@@ -265,11 +265,11 @@ void LogicCode::Std::If(LogicCodeState* state, Light::List& current)
         {
             auto condition = arg1->get(0);
 
-            auto exp = current[2].expression;
+            auto exp = current[2].instruction;
 
             if (condition)
             {
-                Helper::ExecuteExpression(state, *exp);
+                Helper::ExecuteInstruction(state, *exp);
             }
         }
         
@@ -281,19 +281,19 @@ void LogicCode::Std::If(LogicCodeState* state, Light::List& current)
         auto arg1 = Helper::ToBitSet(state, current[1]);
 
 
-        auto exp = current[2].expression;
+        auto exp = current[2].instruction;
         auto _else = current[3].str;
-        auto exp2 = current[4].expression;
+        auto exp2 = current[4].instruction;
         if (arg1->size() && _else->Equals("else"))
         {
             auto condition = arg1->get(0);
             if (condition)
             {
-                Helper::ExecuteExpression(state,*exp);
+                Helper::ExecuteInstruction(state,*exp);
             }
             else
             {
-                Helper::ExecuteExpression(state ,*exp2);
+                Helper::ExecuteInstruction(state ,*exp2);
 
             }
         }
@@ -309,13 +309,13 @@ void LogicCode::Std::While(LogicCodeState* state, Light::List& current)
     {
         auto arg1 = Helper::ToBitSet(state,current[1]);
 
-        auto exp = current[2].expression;
+        auto exp = current[2].instruction;
         if (arg1->size() == 1)
         {
             auto condition = arg1->get(0);
             while (condition)
             {
-                Helper::ExecuteExpression(state, *exp);
+                Helper::ExecuteInstruction(state, *exp);
                 condition = Helper::ToBitSet(state, current[1])->get(0);
             }
         }
@@ -340,7 +340,7 @@ void LogicCode::Std::Fun(LogicCodeState* state,Light::List& current)
         {
             data->get_runtimefn().argsname.push_back(argsname->at(i)[0].str->data());
         }
-        data->get_runtimefn().body = current[3].expression;
+        data->get_runtimefn().body = current[3].instruction;
         state->vd.SetFunction(fnname->data(), data);
     }
 }
@@ -551,14 +551,43 @@ void LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* state)
         if (selectbits->size() == 8)
         {
             auto selectbits_i8 = *(int8_t*)selectbits->data();
-            // 2-1 = 1
-            // 0 < 1
+            
             auto lenargs = len - 1;
             if (selectbits_i8 < lenargs)
             {
                 vd.SetRet(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
                 return;
             } 
+        }
+
+    }
+    vd.SetRet({});
+}
+
+void LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
+{
+    auto& stack = state->stack;
+    auto& vd = state->vd;
+    auto len = stack.sizeoffset();
+    if (len >= 3)
+    {
+
+        auto selectbits = stack.get(0);
+        auto value = stack.get(1);
+
+        if (selectbits->size() == 8)
+        {
+            auto selectbits_i8 = *(int8_t*)selectbits->data();
+            
+            auto lenargs = len - 2;
+            if (selectbits_i8 < lenargs)
+            {
+
+                auto value_selected = stack.get(selectbits_i8 + 2);
+                auto valueref = (RefValue*)value_selected->data();
+                valueref->state->vd.SetVar(valueref->str(), value);
+                return;
+            }
         }
 
     }
@@ -582,6 +611,7 @@ void LogicCode::Std::__Init(LogicCodeState* state)
     state->vd.SetFunction("zero", FunctionData::Make(state, { Zero }));
     state->vd.SetFunction("one", FunctionData::Make(state, { One }));
     state->vd.SetFunction("mux", FunctionData::Make(state, { Mux }));
+    state->vd.SetFunction("demux", FunctionData::Make(state, { Demux }));
 
 }
 

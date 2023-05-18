@@ -33,8 +33,9 @@ namespace LogicCode::Std
 	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> i8(LogicCodeState* state, Light::List& current);
 	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> Ref(LogicCodeState* state, Light::List& current);
 	void Mux(FunctionData* __this, LogicCodeState* state);
+	void Demux(FunctionData* __this, LogicCodeState* state);
 
-	// mux,demux,Decoder,SelectBit,Add,Sub,Mul,Div
+	// Decoder,SelectBit,Add,Sub,Mul,Div
 	void __Init(LogicCodeState* state);
 
 };

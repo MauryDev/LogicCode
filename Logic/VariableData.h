@@ -76,7 +76,7 @@ struct FunctionData
 	struct FunctionRuntime
 	{
 		std::vector<std::string> argsname;
-		Light::Expression* body;
+		Light::Instruction* body;
 	};
 	struct FunctionNative
 	{

@@ -140,7 +140,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								{
 									vd.SetConst(args[i], GetValue(state, expression->at(i)));
 								}
-								ExecuteExpression(&currentstate, *getfn->get_runtimefn().body);
+								ExecuteInstruction(&currentstate, *getfn->get_runtimefn().body);
 								return  currentstate.vd.ret;
 							}
 							else if (getfn->type == FunctionData::FunctionType::Native)
@@ -181,7 +181,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 
 }
 
-std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Expression& token)
+std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Instruction& token)
 {
 	auto state = std::refcount_ptr<LogicCodeState>::make();
 	
@@ -189,13 +189,13 @@ std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Exp
 	state->ret = false;
 	Std::__Init(state.get());
 
-	ExecuteExpression(state.get(), token);
+	ExecuteInstruction(state.get(), token);
 	return state;
 }
 
-void LogicCode::Helper::ExecuteExpression(LogicCodeState* state, Light::Expression& expression)
+void LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruction& instruction)
 {
-	auto count = expression.get_Count();
+	auto count = instruction.get_Count();
 
 	for (size_t i = 0; i < count; i++)
 	{
@@ -203,7 +203,7 @@ void LogicCode::Helper::ExecuteExpression(LogicCodeState* state, Light::Expressi
 		{
 			break;
 		}
-		auto& current = expression[i];
+		auto& current = instruction[i];
 
 		auto oldoffset = state->stack.get_Offset();
 		state->stack.set_Offset(state->stack.size());

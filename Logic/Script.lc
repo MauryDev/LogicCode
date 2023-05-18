@@ -1,2 +1,8 @@
 
-print(mux(i8 0,true,false));
+
+
+if true @{
+	
+	demux(i8 1,true,ref A,ref B);
+	print(B);
+}
