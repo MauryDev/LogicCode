@@ -2,6 +2,7 @@
 #include "LogicCodeHelper.h"
 #include <iostream>
 #include "refcount_ptr.h"
+#include <cmath>
 
 void LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 {
@@ -374,7 +375,6 @@ void LogicCode::Std::Print(FunctionData* __this, LogicCodeState* state)
         for (size_t i = 0; i < len; i++)
         {
             auto result = stack.get(i);
-
             std::cout << result->to_string() << " ";
         }
 
@@ -462,18 +462,14 @@ void LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* state)
     {
 
         auto first = stack.get(0);
-        if (first->size() == 8)
+        auto data = __Toi8(first);
+        auto ret = std::bitsetdynamic::Make((size_t)data);
+        for (uint8_t i = 0; i < data; i++)
         {
-            auto data = *(uint8_t*)first->data();
-            auto ret = std::bitsetdynamic::Make((size_t)data);
-            for (uint8_t i = 0; i < data; i++)
-            {
-                ret->set(i, false);
-            }
-            state->vd.SetRet(ret);
-            return;
-
+            ret->set(i, false);
         }
+        state->vd.SetRet(ret);
+        return;
 
     }
     vd.SetRet({});
@@ -488,18 +484,14 @@ void LogicCode::Std::One(FunctionData* __this, LogicCodeState* state)
     {
 
         auto first = stack.get(0);
-        if (first->size() == 8)
+        auto data = __Toi8(first);
+        auto ret = std::bitsetdynamic::Make((size_t)data);
+        for (uint8_t i = 0; i < data; i++)
         {
-            auto data = *(uint8_t*)first->data();
-            auto ret = std::bitsetdynamic::Make((size_t)data);
-            for (uint8_t i = 0; i < data; i++)
-            {
-                ret->set(i, true);
-            }
-            state->vd.SetRet(ret);
-            return;
-
+            ret->set(i, true);
         }
+        state->vd.SetRet(ret);
+        return;
 
     }
     vd.SetRet({});
@@ -548,16 +540,13 @@ void LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* state)
     {
 
         auto selectbits = stack.get(0);
-        if (selectbits->size() == 8)
+        auto selectbits_i8 = __Toi8(selectbits);
+
+        auto lenargs = len - 1;
+        if (selectbits_i8 < lenargs)
         {
-            auto selectbits_i8 = *(int8_t*)selectbits->data();
-            
-            auto lenargs = len - 1;
-            if (selectbits_i8 < lenargs)
-            {
-                vd.SetRet(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
-                return;
-            } 
+            vd.SetRet(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
+            return;
         }
 
     }
@@ -575,23 +564,176 @@ void LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
         auto selectbits = stack.get(0);
         auto value = stack.get(1);
 
-        if (selectbits->size() == 8)
-        {
-            auto selectbits_i8 = *(int8_t*)selectbits->data();
-            
-            auto lenargs = len - 2;
-            if (selectbits_i8 < lenargs)
-            {
+        auto selectbits_i8 = __Toi8(selectbits);
 
-                auto value_selected = stack.get(selectbits_i8 + 2);
-                auto valueref = (RefValue*)value_selected->data();
-                valueref->state->vd.SetVar(valueref->str(), value);
-                return;
-            }
+        auto lenargs = len - 2;
+        if (selectbits_i8 < lenargs)
+        {
+
+            auto value_selected = stack.get(selectbits_i8 + 2);
+            auto valueref = (RefValue*)value_selected->data();
+            valueref->state->vd.SetVar(valueref->str(), value);
+            return;
         }
 
     }
     vd.SetRet({});
+}
+
+void LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* state)
+{
+    auto& stack = state->stack;
+    auto& vd = state->vd;
+    auto len = stack.sizeoffset();
+    if (len >= 2)
+    {
+
+        auto selectbits = stack.get(0);
+
+        auto selectbits_i8 = __Toi8(selectbits);
+
+        auto lenargs = len - 1;
+        if (selectbits_i8 < lenargs)
+        {
+
+            auto value_selected = stack.get(selectbits_i8 + 2);
+            auto valueref = (RefValue*)value_selected->data();
+            valueref->state->vd.SetVar(valueref->str(), std::bitsetdynamic::Make(true));
+            return;
+        }
+
+    }
+    vd.SetRet({});
+}
+
+void LogicCode::Std::BitSelector(FunctionData* __this, LogicCodeState* state)
+{
+    auto& stack = state->stack;
+    auto& vd = state->vd;
+    auto len = stack.sizeoffset();
+    if (len == 2)
+    {
+        auto bits = stack.get(0);
+
+        auto selectbits = stack.get(1);
+        auto selectbits_i8 = __Toi8(selectbits);
+
+        auto bitssize = bits->size();
+        if (selectbits_i8 < bitssize)
+        {
+            vd.SetRet(std::bitsetdynamic::Make(bits->get(selectbits_i8)));
+            return;
+        }
+
+    }
+    vd.SetRet({});
+}
+
+void LogicCode::Std::Add(FunctionData* __this, LogicCodeState* state)
+{
+    auto& stack = state->stack;
+    auto& vd = state->vd;
+    auto len = stack.sizeoffset();
+    if (len == 2)
+    {
+        auto value1 = stack.get(0);
+        auto value2 = stack.get(1);
+        auto value1size = value1->size();
+        auto value2size = value2->size();
+        if (value1size == value2size)
+        {
+            auto result = std::bitsetdynamic::Make(value1size);
+
+            auto carry = false;
+            for (size_t i = 0; i < value1size; i++)
+            {
+                auto bitcurrent1 = value1->get(i);
+                auto bitcurrent2 = value2->get(i);
+                if (bitcurrent1 && bitcurrent2)
+                {
+                    if (carry)
+                    {
+                        result->set(i, true);
+                        carry = true;
+                    }
+                    else
+                    {
+                        result->set(i, false);
+                        carry = true;
+                    }
+                }
+                else
+                {
+                    auto orval = bitcurrent1 || bitcurrent2;
+                    if (orval)
+                    {
+                        if (carry)
+                        {
+                            result->set(i, false);
+                            carry = true;
+                        }
+                        else
+                        {
+                            result->set(i, true);
+                            carry = false;
+
+                        }
+                    }
+                    else
+                    {
+                        if (carry)
+                        {
+                            result->set(i, true);
+                            carry = false;
+                        }
+                        else
+                        {
+                            result->set(i, false);
+                            carry = false;
+
+                        }
+
+                    }
+                }
+            }
+
+            vd.SetRet(result);
+            return;
+        }
+        
+    }
+    
+    vd.SetRet({});
+    
+
+}
+
+void LogicCode::Std::Sub(FunctionData* __this, LogicCodeState* state)
+{
+}
+
+int8_t LogicCode::Std::__Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+{
+    auto sizev = v->size();
+    auto len = sizev < 8 ? 0 : sizev - 8;
+    int8_t value = 0;
+
+    for (size_t i = 0; i < sizev; i++)
+    {
+        value <<= 1;
+        value |= v->get(sizev - i - 1);
+    }
+    return value;
+}
+
+bool LogicCode::Std::__ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+{
+    auto size = v->size();
+    if (size > 0)
+    {
+        return v->get(0);
+    }
+    return false;
 }
 
 
@@ -612,6 +754,9 @@ void LogicCode::Std::__Init(LogicCodeState* state)
     state->vd.SetFunction("one", FunctionData::Make(state, { One }));
     state->vd.SetFunction("mux", FunctionData::Make(state, { Mux }));
     state->vd.SetFunction("demux", FunctionData::Make(state, { Demux }));
+    state->vd.SetFunction("decoder", FunctionData::Make(state, { Decoder }));
+    state->vd.SetFunction("bitselector", FunctionData::Make(state, { BitSelector }));
+    state->vd.SetFunction("add", FunctionData::Make(state, { Add }));
 
 }
 

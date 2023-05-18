@@ -41,6 +41,7 @@ namespace std
             return _bits();
         }
         void set(int i, bool value) {
+
             Validate(i);
             int block = i / 64;
             int bit = i % 64;
@@ -58,6 +59,7 @@ namespace std
         bool get(int i) {
             Validate(i);
 
+
             int block = i / 64;
             int bit = i % 64;
 
@@ -74,9 +76,12 @@ namespace std
             auto len = _size;
             std::string str;
             str.reserve(len);
+            int ir = len - 1;
+
             for (size_t i = 0; i < len; i++)
             {
-                str.push_back(get(i) == true ? '1' : '0');
+                str.push_back(get(ir) == true ? '1' : '0');
+                ir--;
             }
             return str;
         }
@@ -109,12 +114,12 @@ namespace std
             }
             auto lenarr = (n + 63) / 64;
 
-            auto lenmalloc = sizeof(refcount_elem) + sizeof(Bits);
+            auto lenmalloc = sizeof(refcount_elem) + sizeof(Bits) * lenarr;
             auto ret = malloc_t<refcount_elem>(lenmalloc);
             ret->count = 0;
             ret->obj._size = n;
 
-            memcpy(ret->obj._bits(), v, (n + 63) / 64);
+            memcpy(ret->obj._bits(), v, lenarr);
 
             return ret;
 

@@ -1,5 +1,1 @@
-fun myfn() @{
-	return true;
-};
-
-print(myfn());
+print(add(i8 1,i8 1));

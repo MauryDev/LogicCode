@@ -10,9 +10,11 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 		auto number = command.str;
 		auto numberlen = number->size();
 		auto v = std::bitsetdynamic::Make(numberlen);
+		int ir = numberlen - 1;
 		for (size_t i = 0; i < numberlen; i++)
 		{
-			v->set(i, number->at(i) != '0');
+			v->set(ir, number->at(i) != '0');
+			ir--;
 		}
 		return v;
 	}
