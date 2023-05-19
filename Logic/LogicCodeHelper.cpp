@@ -5,6 +5,11 @@
 
 std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state, Light::CommandResult& command)
 {
+
+	if (!state->CanRun())
+	{
+		return {};
+	}
 	if (command.resultType == Light::ResultType::Number)
 	{
 		auto number = command.str;
@@ -40,8 +45,23 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 		auto& exp = command.expression;
 		if (exp->get_Count() == 1)
 		{
-			return GetValue(state, exp->at(0));
+			auto arg = GetValue(state, exp->at(0));
+			if (!state->CanRun())
+			{
+				if (!state->IsError())
+				{
+					state->error = "Don't use return in expression";
+				}
+				return {};
+			}
+			return arg;
 		}
+	}
+	else if (command.resultType == Light::ResultType::Instruction)
+	{
+		ExecuteInstuctionShared(state, *command.instruction);
+
+		return {};
 	}
 	return {};
 }
@@ -49,6 +69,10 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 
 std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::GetValue(LogicCodeState* state, Light::List& current)
 {
+	if (!state->CanRun())
+	{
+		return {};
+	}
 	auto instructionsize = current.get_Count();
 	auto& statestack = state->stack;
 	auto& statevd = state->vd;
@@ -81,6 +105,10 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 			{
 				Std::Const(state, current);
 			}
+			else if (currentopcode->Equals("var"))
+			{
+				Std::Var(state, current);
+			}
 			else if (currentopcode->Equals("case"))
 			{
 				Std::Case(state, current);
@@ -103,12 +131,18 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 					{
 						if (*type.coperator == Light::COperator::Set)
 						{
-							Light::List values(instructionsize - 2, &current.at(2));
-							for (size_t i = 2; i < instructionsize; i++)
-							{
-								values.Add(current[i]);
-							}
+							auto lenargs = instructionsize - 2;
+							Light::List values(lenargs,lenargs, &current.at(2));
+							
 							auto v2 = GetValue(state, values);
+							if (!state->CanRun())
+							{
+								if (!state->IsError())
+								{
+									state->error = "Don't use return in expression";
+								}
+								return {};
+							}
 							statevd.SetVar(currentopcode->data(), v2);
 
 						}
@@ -129,21 +163,30 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 							if (getfn->type == FunctionData::FunctionType::Runtime)
 							{
 								auto parent = getfn->state;
-								VariableData vd;
 
 								LogicCodeState currentstate;
 								currentstate.ret = false;
 								currentstate.vd.parent = &parent->vd;
+								VariableData& vd = currentstate.vd;
 
 								auto& args = getfn->get_runtimefn().argsname;
 								auto expressionlen = args.size();
 
 								for (size_t i = 0; i < expressionlen; i++)
 								{
-									vd.SetConst(args[i], GetValue(state, expression->at(i)));
+									auto arg = GetValue(state, expression->at(i));
+									if (!state->CanRun())
+									{
+										if (!state->IsError())
+										{
+											state->error = "Don't use return in expression";
+										}
+										return {};
+									}
+									vd.SetConst(args[i], arg,false);
 								}
 								ExecuteInstruction(&currentstate, *getfn->get_runtimefn().body);
-								return  currentstate.vd.ret;
+								return currentstate.vd.ret;
 							}
 							else if (getfn->type == FunctionData::FunctionType::Native)
 							{
@@ -152,7 +195,15 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								statestack.set_Offset(statestack.size());
 								for (size_t i = 0; i < expressionlen; i++)
 								{
-
+									auto arg = GetValue(state, expression->at(i));
+									if (!state->CanRun())
+									{
+										if (!state->IsError())
+										{
+											state->error = "Don't use return in expression";
+										}
+										return {};
+									}
 									statestack.push(GetValue(state, expression->at(i)));
 								}
 								getfn->get_nativefn().callback(getfn.get(), state);
@@ -187,8 +238,7 @@ std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Ins
 {
 	auto state = std::refcount_ptr<LogicCodeState>::make();
 	
-	state->vd.parent = NULL;
-	state->ret = false;
+	
 	Std::__Init(state.get());
 
 	ExecuteInstruction(state.get(), token);
@@ -197,12 +247,21 @@ std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Ins
 
 void LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruction& instruction)
 {
+	if (!state->CanRun())
+	{
+		return;
+	}
+
 	auto count = instruction.get_Count();
 
 	for (size_t i = 0; i < count; i++)
 	{
-		if (state->ret)
+		if (!state->CanRun())
 		{
+			if (!state->IsError())
+			{
+				std::cout << state->error << std::endl;
+			}
 			break;
 		}
 		auto& current = instruction[i];
@@ -219,4 +278,24 @@ void LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruc
 		}
 		state->stack.set_Offset(oldoffset);
 	}
+}
+
+void LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Instruction& instruction)
+{
+	if (!state->CanRun())
+	{
+		return;
+	}
+
+	LogicCodeState currentstate;
+	currentstate.ret = false;
+	currentstate.vd.parent = &state->vd;
+	VariableData& vd = currentstate.vd;
+
+	vd.ret = state->vd.ret;
+	ExecuteInstruction(&currentstate, instruction);
+
+	state->vd.ret = vd.ret;
+	state->ret = currentstate.ret;
+	state->error = currentstate.error;
 }

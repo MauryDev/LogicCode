@@ -36,23 +36,23 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> VariableData::GetValue
     return GetValue(str);
 }
 
-std::refcount_ptr<FunctionData, FunctionData> VariableData::GetFunction(std::string& str)
+std::refcount_ptr<FunctionData, FunctionData> VariableData::GetFunction(std::string& str, bool findfromparent)
 {
     auto infunctions = functions.find(str);
     if (infunctions != functions.end())
     {
         return infunctions->second;
     }
-    if (parent != NULL)
+    if (findfromparent && parent != NULL)
     {
         return parent->GetFunction(str);
     }
     return {};
 }
 
-std::refcount_ptr<FunctionData, FunctionData> VariableData::GetFunction(std::string&& str)
+std::refcount_ptr<FunctionData, FunctionData> VariableData::GetFunction(std::string&& str, bool findfromparent)
 {
-    return GetFunction(str);
+    return GetFunction(str,findfromparent);
 }
 
 void VariableData::SetFunction(std::string&& str, std::refcount_ptr<FunctionData, FunctionData>&& value)
@@ -75,7 +75,7 @@ void VariableData::SetFunction(std::string& str, std::refcount_ptr<FunctionData,
     SetFunction(str, std::move(value));
 }
 
-bool VariableData::Exists(std::string& str)
+bool VariableData::Exists(std::string& str, bool checkparent)
 {
     auto invars = vars.find(str);
     if (invars != vars.end())
@@ -93,19 +93,19 @@ bool VariableData::Exists(std::string& str)
     {
         return true;
     }
-    if (parent != NULL)
+    if (checkparent,parent != NULL)
     {
         return parent->Exists(str);
     }
     return false;
 }
 
-bool VariableData::Exists(std::string&& str)
+bool VariableData::Exists(std::string&& str, bool checkparent)
 {
-    return Exists(str);
+    return Exists(str,checkparent);
 }
 
-VariableData::VarType VariableData::GetTypeVariable(std::string& str)
+VariableData::VarType VariableData::GetTypeVariable(std::string& str, bool checkparent)
 {
     auto invars = vars.find(str);
     if (invars != vars.end())
@@ -122,44 +122,44 @@ VariableData::VarType VariableData::GetTypeVariable(std::string& str)
     {
         return VarType::Function;
     }
-    if (parent != NULL)
+    if (checkparent && parent != NULL)
     {
         return parent->GetTypeVariable(str);
     }
     return VarType::None;
 }
 
-VariableData::VarType VariableData::GetTypeVariable(std::string&& str)
+VariableData::VarType VariableData::GetTypeVariable(std::string&& str, bool checkparent)
 {
-    return GetTypeVariable(str);
+    return GetTypeVariable(str,checkparent);
 }
 
-void VariableData::SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v)
+void VariableData::SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent)
 {
-    if (!Exists(str))
+    if (!Exists(str,checkparent))
     {
         consts[str] = v;
     }
 }
 
-void VariableData::SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+void VariableData::SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent)
 {
-    SetConst(str, std::move(v));
+    SetConst(str, std::move(v), checkparent);
 }
 
-void VariableData::SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v)
+void VariableData::SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent)
 {
-    SetConst(str,std::move(v));
+    SetConst(str,std::move(v), checkparent);
 }
 
-void VariableData::SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+void VariableData::SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent)
 {
-    SetConst(str, std::move(v));
+    SetConst(str, std::move(v), checkparent);
 }
 
-void VariableData::SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v)
+void VariableData::SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent)
 {
-    if (!Exists(str) || GetTypeVariable(str) == VarType::Var)
+    if (!Exists(str, checkparent) || GetTypeVariable(str, checkparent) == VarType::Var)
     {
         vars[str] = v;
 
@@ -167,19 +167,19 @@ void VariableData::SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic
    
 }
 
-void VariableData::SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+void VariableData::SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent)
 {
-    SetVar(str, std::move(v));
+    SetVar(str, std::move(v), checkparent);
 }
 
-void VariableData::SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v)
+void VariableData::SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent)
 {
-    SetVar(str, std::move(v));
+    SetVar(str, std::move(v), checkparent);
 }
 
-void VariableData::SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
+void VariableData::SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent)
 {
-    SetVar(str, std::move(v));
+    SetVar(str, std::move(v),checkparent);
 }
 
 void VariableData::SetRet(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v)
@@ -191,4 +191,20 @@ void VariableData::SetRet(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynam
 {
     ret = v;
 
+}
+
+LogicCodeState::LogicCodeState()
+{
+    ret = false;
+    error = NULL;
+}
+
+bool LogicCodeState::CanRun()
+{
+    return error == nullptr && !ret;
+}
+
+bool LogicCodeState::IsError()
+{
+    return error != NULL;
 }

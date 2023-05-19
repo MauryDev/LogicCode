@@ -266,11 +266,11 @@ void LogicCode::Std::If(LogicCodeState* state, Light::List& current)
         {
             auto condition = arg1->get(0);
 
-            auto exp = current[2].instruction;
+            auto exp = current[2].expression;
 
             if (condition)
             {
-                Helper::ExecuteInstruction(state, *exp);
+                Helper::ExecuteInstuctionShared(state, *exp);
             }
         }
         
@@ -290,11 +290,11 @@ void LogicCode::Std::If(LogicCodeState* state, Light::List& current)
             auto condition = arg1->get(0);
             if (condition)
             {
-                Helper::ExecuteInstruction(state,*exp);
+                Helper::ExecuteInstuctionShared(state,*exp);
             }
             else
             {
-                Helper::ExecuteInstruction(state ,*exp2);
+                Helper::ExecuteInstuctionShared(state ,*exp2);
 
             }
         }
@@ -316,7 +316,7 @@ void LogicCode::Std::While(LogicCodeState* state, Light::List& current)
             auto condition = arg1->get(0);
             while (condition)
             {
-                Helper::ExecuteInstruction(state, *exp);
+                Helper::ExecuteInstuctionShared(state, *exp);
                 condition = Helper::ToBitSet(state, current[1])->get(0);
             }
         }
@@ -349,11 +349,22 @@ void LogicCode::Std::Fun(LogicCodeState* state,Light::List& current)
 void LogicCode::Std::Return(LogicCodeState* state, Light::List& current)
 {
     auto instructionsize = current.get_Count();
-
-    if (instructionsize == 2)
+    if (instructionsize >= 2)
     {
-        auto result = Helper::ToBitSet(state,current[1]);
-        state->vd.SetRet(result);
+        auto lenlist = instructionsize - 1;
+        Light::List values(lenlist, lenlist, &current.at(1));
+       
+        auto v2 = Helper::GetValue(state, values);
+        if (!state->CanRun())
+        {
+            if (!state->IsError())
+            {
+                state->error = "Don't use return in expression";
+            }
+            return;
+        }
+
+        state->vd.SetRet(v2);
         state->ret = true;
     }
     else
@@ -398,13 +409,48 @@ void LogicCode::Std::Const(LogicCodeState* state, Light::List& current)
         {
             if (*type.coperator == Light::COperator::Set)
             {
-                Light::List values(instructionsize - 3, &current.at(3));
-                for (size_t i = 3; i < instructionsize; i++)
-                {
-                    values.Add(current[i]);
-                }
+                auto lenlist = instructionsize - 3;
+                Light::List values(lenlist, lenlist, &current.at(3));
                 auto v2 = Helper::GetValue(state, values);
-                state->vd.SetConst(name->data(), v2);
+                if (!state->CanRun())
+                {
+                    if (!state->IsError())
+                    {
+                        state->error = "Don't use return in expression";
+                    }
+                    return;
+                }
+                state->vd.SetConst(name->data(), v2,false);
+            }
+        }
+    }
+}
+
+void LogicCode::Std::Var(LogicCodeState* state, Light::List& current)
+{
+    auto instructionsize = current.get_Count();
+
+    if (instructionsize >= 4)
+    {
+        auto name = current[1].str;
+        auto type = current[2];
+
+        if (type.resultType == Light::ResultType::Operador)
+        {
+            if (*type.coperator == Light::COperator::Set)
+            {
+                auto lenlist = instructionsize - 3;
+                Light::List values(lenlist, lenlist, &current.at(3));
+                auto v2 = Helper::GetValue(state, values);
+                if (!state->CanRun())
+                {
+                    if (!state->IsError())
+                    {
+                        state->error = "Don't use return in expression";
+                    }
+                    return;
+                }
+                state->vd.SetVar(name->data(), v2, false);
             }
         }
     }

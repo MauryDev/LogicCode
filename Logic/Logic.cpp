@@ -32,10 +32,16 @@ void Test(int argc, const char** args)
     auto start = std::chrono::high_resolution_clock::now();
 
     auto results = LogicCode::Helper::IntrepreterLogic(token.expression);
+
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duracao = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    
     token.Free();
+    if (results->IsError())
+    {
+        std::cout <<"ERROR: " << results->error << std::endl;
+    }
     std::cout << "Tempo de execucao: " << duracao.count() << " microsegundos" << std::endl;
 }
 int main(int argc, const char** args)

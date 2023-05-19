@@ -26,8 +26,8 @@ struct VariableData
 	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> GetValue(std::string& str);
 	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> GetValue(std::string&& str);
 
-	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string& str);
-	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string&& str);
+	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string& str,bool findfromparent = true);
+	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string&& str, bool findfromparent = true);
 
 
 	void SetFunction(std::string&& str, std::refcount_ptr<FunctionData, FunctionData>&& value);
@@ -35,22 +35,21 @@ struct VariableData
 	void SetFunction(std::string& str, std::refcount_ptr<FunctionData, FunctionData>&& value);
 	void SetFunction(std::string& str, std::refcount_ptr<FunctionData, FunctionData>& value);
 
-	bool Exists(std::string& str);
-	bool Exists(std::string&& str);
+	bool Exists(std::string& str, bool checkparent = true);
+	bool Exists(std::string&& str, bool checkparent = true);
 
-	VarType GetTypeVariable(std::string& str);
-	VarType GetTypeVariable(std::string&& str);
+	VarType GetTypeVariable(std::string& str, bool checkparent = true);
+	VarType GetTypeVariable(std::string&& str, bool checkparent = true);
 
-	void SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v);
-	void SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
-	void SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v);
-	void SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
+	void SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent = true);
+	void SetConst(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent = true);
+	void SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent = true);
+	void SetConst(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent = true);
 
-
-	void SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v);
-	void SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
-	void SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v);
-	void SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
+	void SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent = true);
+	void SetVar(std::string& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent = true);
+	void SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v, bool checkparent = true);
+	void SetVar(std::string&& str, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v, bool checkparent = true);
 
 	void SetRet(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>&& v);
 	void SetRet(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
@@ -61,7 +60,10 @@ struct LogicCodeState
 	VariableData vd;
 	bool ret;
 	StackBitset stack;
-	
+	const char* error;
+	LogicCodeState();
+	bool CanRun();
+	bool IsError();
 };
 struct FunctionData
 {

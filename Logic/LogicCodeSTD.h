@@ -26,6 +26,7 @@ namespace LogicCode::Std
 	void Return(LogicCodeState* state, Light::List& current);
 	void Print(FunctionData* __this, LogicCodeState* state);
 	void Const(LogicCodeState* state, Light::List& current);
+	void Var(LogicCodeState* state, Light::List& current);
 	void Case(LogicCodeState* state, Light::List& current);
 	void Buffer(FunctionData* __this, LogicCodeState* state);
 	void Zero(FunctionData* __this, LogicCodeState* state);
@@ -43,7 +44,7 @@ namespace LogicCode::Std
 	int8_t __Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
 	bool __ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
 
-	// Add,Sub,Mul,Div
+	// Sub,Mul,Div
 	void __Init(LogicCodeState* state);
 
 };

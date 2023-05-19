@@ -1,1 +1,4 @@
-print(add(i8 1,i8 1));
+
+if true @{
+	print(add(return 10,10));
+};
