@@ -35,8 +35,11 @@ public:
 	}
 	void pop()
 	{
-		auto ret = stack[size() - 1];
 		stack.pop_back();
+	}
+	void remove(int index)
+	{
+		stack.erase(stack.begin() + (index + offset));
 	}
 	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& top()
 	{

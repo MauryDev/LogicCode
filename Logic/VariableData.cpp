@@ -2,7 +2,7 @@
 #include <iostream>
 VariableData::VariableData()
 {
-    parent = NULL;
+    parent = {};
     ret = {};
 }
 
@@ -24,7 +24,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> VariableData::GetValue
     {
         return inconsts->second;
     }
-    if (parent != NULL)
+    if (parent.get() != NULL)
     {
         return parent->GetValue(str);
     }
@@ -43,7 +43,7 @@ std::refcount_ptr<FunctionData, FunctionData> VariableData::GetFunction(std::str
     {
         return infunctions->second;
     }
-    if (findfromparent && parent != NULL)
+    if (findfromparent && parent.get() != NULL)
     {
         return parent->GetFunction(str);
     }
@@ -93,7 +93,7 @@ bool VariableData::Exists(std::string& str, bool checkparent)
     {
         return true;
     }
-    if (checkparent,parent != NULL)
+    if (checkparent && parent.get() != NULL)
     {
         return parent->Exists(str);
     }
@@ -122,7 +122,7 @@ VariableData::VarType VariableData::GetTypeVariable(std::string& str, bool check
     {
         return VarType::Function;
     }
-    if (checkparent && parent != NULL)
+    if (checkparent && parent.get() != NULL)
     {
         return parent->GetTypeVariable(str);
     }
@@ -195,6 +195,7 @@ void VariableData::SetRet(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynam
 
 LogicCodeState::LogicCodeState()
 {
+    scope = std::refcount_ptr<VariableData>::make();
     ret = false;
     error = NULL;
 }

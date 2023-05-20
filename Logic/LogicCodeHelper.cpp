@@ -37,7 +37,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 		}
 		else
 		{
-			return state->vd.GetValue(str->data());
+			return state->scope->GetValue(str->data());
 		}
 	}
 	else if (command.resultType == Light::ResultType::Expression)
@@ -75,7 +75,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 	}
 	auto instructionsize = current.get_Count();
 	auto& statestack = state->stack;
-	auto& statevd = state->vd;
+	auto& statevd = state->scope;
 	if (instructionsize > 0)
 	{
 		auto typeexpr = current[0];
@@ -143,7 +143,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								}
 								return {};
 							}
-							statevd.SetVar(currentopcode->data(), v2);
+							statevd->SetVar(currentopcode->data(), v2);
 
 						}
 					}
@@ -154,7 +154,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 					if (type.resultType == Light::ResultType::Expression)
 					{
 						auto expression = type.expression;
-						auto getfn = statevd.GetFunction(currentopcode->data());
+						auto getfn = statevd->GetFunction(currentopcode->data());
 
 						if (getfn->type != FunctionData::FunctionType::None)
 						{
@@ -162,12 +162,12 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 
 							if (getfn->type == FunctionData::FunctionType::Runtime)
 							{
-								auto parent = getfn->state;
+								auto& parent = getfn->parentscope;
 
-								LogicCodeState currentstate;
-								currentstate.ret = false;
-								currentstate.vd.parent = &parent->vd;
-								VariableData& vd = currentstate.vd;
+								auto oldscope = state->scope;
+
+								auto newscope = std::refcount_ptr<VariableData>::make();
+								newscope->parent = parent;
 
 								auto& args = getfn->get_runtimefn().argsname;
 								auto expressionlen = args.size();
@@ -177,16 +177,23 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 									auto arg = GetValue(state, expression->at(i));
 									if (!state->CanRun())
 									{
+										
 										if (!state->IsError())
 										{
 											state->error = "Don't use return in expression";
 										}
 										return {};
 									}
-									vd.SetConst(args[i], arg,false);
+									newscope->SetConst(args[i], arg,false);
 								}
-								ExecuteInstruction(&currentstate, *getfn->get_runtimefn().body);
-								return currentstate.vd.ret;
+								state->scope = newscope;
+
+								ExecuteInstruction(state, *getfn->get_runtimefn().body);
+
+								state->scope = oldscope;
+
+								state->ret = false;
+								return newscope->ret;
 							}
 							else if (getfn->type == FunctionData::FunctionType::Native)
 							{
@@ -210,11 +217,11 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								auto toremove = statestack.sizeoffset();
 								for (size_t i = 0; i < toremove; i++)
 								{
-									state->stack.pop();
+									state->stack.remove(0);
 								}
 								statestack.set_Offset(oldoffset);
 
-								return statevd.ret;
+								return statevd->ret;
 							}
 						}
 					}
@@ -258,10 +265,6 @@ void LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruc
 	{
 		if (!state->CanRun())
 		{
-			if (!state->IsError())
-			{
-				std::cout << state->error << std::endl;
-			}
 			break;
 		}
 		auto& current = instruction[i];
@@ -286,16 +289,13 @@ void LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::In
 	{
 		return;
 	}
+	auto oldscope = state->scope;
+	auto newscope = std::refcount_ptr<VariableData>::make();
+	newscope->parent = oldscope;
+	state->scope = newscope;
 
-	LogicCodeState currentstate;
-	currentstate.ret = false;
-	currentstate.vd.parent = &state->vd;
-	VariableData& vd = currentstate.vd;
+	
+	ExecuteInstruction(state, instruction);
 
-	vd.ret = state->vd.ret;
-	ExecuteInstruction(&currentstate, instruction);
-
-	state->vd.ret = vd.ret;
-	state->ret = currentstate.ret;
-	state->error = currentstate.error;
+	state->scope = oldscope;
 }

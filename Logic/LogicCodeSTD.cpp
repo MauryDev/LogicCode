@@ -7,13 +7,13 @@
 void LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
         auto retv = std::bitsetdynamic::Copy(stack.get(0));
 
-        vd.SetRet(retv);
+        scope->SetRet(retv);
         auto sizeinput = retv->size();
         
         for (size_t i = 1; i < len; i++)
@@ -28,13 +28,13 @@ void LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
         return;
     }
-    vd.SetRet({});
+    scope->SetRet({});
 
     
 }
@@ -42,13 +42,13 @@ void LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 void LogicCode::Std::Or(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 1; i < len; i++)
@@ -63,14 +63,14 @@ void LogicCode::Std::Or(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 
 
 }
@@ -79,14 +79,14 @@ void LogicCode::Std::Or(FunctionData* __this, LogicCodeState* state)
 void LogicCode::Std::Not(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 1)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 0; i < sizeinput; i++)
@@ -96,13 +96,13 @@ void LogicCode::Std::Not(FunctionData* __this, LogicCodeState* state)
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
@@ -110,7 +110,7 @@ void LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* state)
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 
 
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 1; i < len; i++)
@@ -125,27 +125,27 @@ void LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 1; i < len; i++)
@@ -160,7 +160,7 @@ void LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
@@ -172,20 +172,20 @@ void LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* state)
 
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 
-        state->vd.SetRet(firstparam);
+        state->scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 1; i < len; i++)
@@ -200,7 +200,7 @@ void LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
@@ -212,20 +212,20 @@ void LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* state)
 
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len > 0)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         auto sizeinput = firstparam->size();
 
         for (size_t i = 1; i < len; i++)
@@ -240,7 +240,7 @@ void LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* state)
             }
             else
             {
-                vd.SetRet({});
+                scope->SetRet({});
                 return;
             }
         }
@@ -252,7 +252,7 @@ void LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* state)
 
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::If(LogicCodeState* state, Light::List& current)
@@ -342,7 +342,7 @@ void LogicCode::Std::Fun(LogicCodeState* state,Light::List& current)
             data->get_runtimefn().argsname.push_back(argsname->at(i)[0].str->data());
         }
         data->get_runtimefn().body = current[3].instruction;
-        state->vd.SetFunction(fnname->data(), data);
+        state->scope->SetFunction(fnname->data(), data);
     }
 }
 
@@ -364,12 +364,12 @@ void LogicCode::Std::Return(LogicCodeState* state, Light::List& current)
             return;
         }
 
-        state->vd.SetRet(v2);
+        state->scope->SetRet(v2);
         state->ret = true;
     }
     else
     {
-        state->vd.SetRet({});
+        state->scope->SetRet({});
 
     }
 }
@@ -377,7 +377,7 @@ void LogicCode::Std::Return(LogicCodeState* state, Light::List& current)
 void LogicCode::Std::Print(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
 
     if (len >= 1)
@@ -393,7 +393,7 @@ void LogicCode::Std::Print(FunctionData* __this, LogicCodeState* state)
         
     }
 
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Const(LogicCodeState* state, Light::List& current)
@@ -420,7 +420,7 @@ void LogicCode::Std::Const(LogicCodeState* state, Light::List& current)
                     }
                     return;
                 }
-                state->vd.SetConst(name->data(), v2,false);
+                state->scope->SetConst(name->data(), v2,false);
             }
         }
     }
@@ -450,7 +450,7 @@ void LogicCode::Std::Var(LogicCodeState* state, Light::List& current)
                     }
                     return;
                 }
-                state->vd.SetVar(name->data(), v2, false);
+                state->scope->SetVar(name->data(), v2, false);
             }
         }
     }
@@ -469,40 +469,40 @@ void LogicCode::Std::Case(LogicCodeState* state, Light::List& current)
             auto condition = bits->get(0);
             if (condition)
             {
-                state->vd.SetRet(Helper::ToBitSet(state, current[2]));
+                state->scope->SetRet(Helper::ToBitSet(state, current[2]));
             }
             else
             {
-                state->vd.SetRet(Helper::ToBitSet(state, current[3]));
+                state->scope->SetRet(Helper::ToBitSet(state, current[3]));
             }
         }
         
         
     }
-    state->vd.SetRet({});
+    state->scope->SetRet({});
 
 }
 
 void LogicCode::Std::Buffer(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 1)
     {
 
         auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
-        vd.SetRet(firstparam);
+        scope->SetRet(firstparam);
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 1)
     {
@@ -514,17 +514,17 @@ void LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* state)
         {
             ret->set(i, false);
         }
-        state->vd.SetRet(ret);
+        state->scope->SetRet(ret);
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::One(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 1)
     {
@@ -536,11 +536,11 @@ void LogicCode::Std::One(FunctionData* __this, LogicCodeState* state)
         {
             ret->set(i, true);
         }
-        state->vd.SetRet(ret);
+        state->scope->SetRet(ret);
         return;
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 
@@ -552,7 +552,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Std::i8(Log
     {
         auto numi8 = current[1].str;
 
-        int8_t num = std::strtol(numi8->data(), nullptr, 10);
+        int8_t num = (int8_t)std::strtol(numi8->data(), nullptr, 10);
         auto refbits = std::bitsetdynamic::Make((size_t)8);
         char* data = (char*)refbits->data();
 
@@ -580,7 +580,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Std::Ref(Lo
 void LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len >= 2)
     {
@@ -591,18 +591,18 @@ void LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* state)
         auto lenargs = len - 1;
         if (selectbits_i8 < lenargs)
         {
-            vd.SetRet(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
+            scope->SetRet(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
             return;
         }
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len >= 3)
     {
@@ -618,18 +618,18 @@ void LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
 
             auto value_selected = stack.get(selectbits_i8 + 2);
             auto valueref = (RefValue*)value_selected->data();
-            valueref->state->vd.SetVar(valueref->str(), value);
+            valueref->state->scope->SetVar(valueref->str(), value);
             return;
         }
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len >= 2)
     {
@@ -644,18 +644,18 @@ void LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* state)
 
             auto value_selected = stack.get(selectbits_i8 + 2);
             auto valueref = (RefValue*)value_selected->data();
-            valueref->state->vd.SetVar(valueref->str(), std::bitsetdynamic::Make(true));
+            valueref->state->scope->SetVar(valueref->str(), std::bitsetdynamic::Make(true));
             return;
         }
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::BitSelector(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 2)
     {
@@ -667,18 +667,18 @@ void LogicCode::Std::BitSelector(FunctionData* __this, LogicCodeState* state)
         auto bitssize = bits->size();
         if (selectbits_i8 < bitssize)
         {
-            vd.SetRet(std::bitsetdynamic::Make(bits->get(selectbits_i8)));
+            scope->SetRet(std::bitsetdynamic::Make(bits->get(selectbits_i8)));
             return;
         }
 
     }
-    vd.SetRet({});
+    scope->SetRet({});
 }
 
 void LogicCode::Std::Add(FunctionData* __this, LogicCodeState* state)
 {
     auto& stack = state->stack;
-    auto& vd = state->vd;
+    auto& scope = state->scope;
     auto len = stack.sizeoffset();
     if (len == 2)
     {
@@ -743,13 +743,13 @@ void LogicCode::Std::Add(FunctionData* __this, LogicCodeState* state)
                 }
             }
 
-            vd.SetRet(result);
+            scope->SetRet(result);
             return;
         }
         
     }
     
-    vd.SetRet({});
+    scope->SetRet({});
     
 
 }
@@ -767,7 +767,7 @@ int8_t LogicCode::Std::__Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetd
     for (size_t i = 0; i < sizev; i++)
     {
         value <<= 1;
-        value |= v->get(sizev - i - 1);
+        value |= (int8_t)v->get(sizev - i - 1);
     }
     return value;
 }
@@ -787,22 +787,22 @@ bool LogicCode::Std::__ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetd
 
 void LogicCode::Std::__Init(LogicCodeState* state)
 {
-    state->vd.SetFunction("and", FunctionData::Make(state, { And }));
-    state->vd.SetFunction("or", FunctionData::Make(state, { Or }));
-    state->vd.SetFunction("not", FunctionData::Make(state, { Not }));
-    state->vd.SetFunction("xor", FunctionData::Make(state, { Xor }));
-    state->vd.SetFunction("nand", FunctionData::Make(state, { Nand }));
-    state->vd.SetFunction("nor", FunctionData::Make(state, { Nor }));
-    state->vd.SetFunction("xnor", FunctionData::Make(state, { Xnor }));
-    state->vd.SetFunction("print", FunctionData::Make(state, { Print }));
-    state->vd.SetFunction("buffer", FunctionData::Make(state, { Buffer }));
-    state->vd.SetFunction("zero", FunctionData::Make(state, { Zero }));
-    state->vd.SetFunction("one", FunctionData::Make(state, { One }));
-    state->vd.SetFunction("mux", FunctionData::Make(state, { Mux }));
-    state->vd.SetFunction("demux", FunctionData::Make(state, { Demux }));
-    state->vd.SetFunction("decoder", FunctionData::Make(state, { Decoder }));
-    state->vd.SetFunction("bitselector", FunctionData::Make(state, { BitSelector }));
-    state->vd.SetFunction("add", FunctionData::Make(state, { Add }));
+    state->scope->SetFunction("and", FunctionData::Make(state, { And }));
+    state->scope->SetFunction("or", FunctionData::Make(state, { Or }));
+    state->scope->SetFunction("not", FunctionData::Make(state, { Not }));
+    state->scope->SetFunction("xor", FunctionData::Make(state, { Xor }));
+    state->scope->SetFunction("nand", FunctionData::Make(state, { Nand }));
+    state->scope->SetFunction("nor", FunctionData::Make(state, { Nor }));
+    state->scope->SetFunction("xnor", FunctionData::Make(state, { Xnor }));
+    state->scope->SetFunction("print", FunctionData::Make(state, { Print }));
+    state->scope->SetFunction("buffer", FunctionData::Make(state, { Buffer }));
+    state->scope->SetFunction("zero", FunctionData::Make(state, { Zero }));
+    state->scope->SetFunction("one", FunctionData::Make(state, { One }));
+    state->scope->SetFunction("mux", FunctionData::Make(state, { Mux }));
+    state->scope->SetFunction("demux", FunctionData::Make(state, { Demux }));
+    state->scope->SetFunction("decoder", FunctionData::Make(state, { Decoder }));
+    state->scope->SetFunction("bitselector", FunctionData::Make(state, { BitSelector }));
+    state->scope->SetFunction("add", FunctionData::Make(state, { Add }));
 
 }
 

@@ -15,7 +15,7 @@ struct VariableData
 		Var,
 		Function
 	};
-	VariableData* parent;
+	std::refcount_ptr<VariableData> parent;
 	std::unordered_map<std::string, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>> vars;
 	std::unordered_map<std::string, std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>> consts;
 	std::unordered_map<std::string, std::refcount_ptr<FunctionData, FunctionData>> functions;
@@ -57,7 +57,7 @@ struct VariableData
 };
 struct LogicCodeState
 {
-	VariableData vd;
+	std::refcount_ptr<VariableData> scope;
 	bool ret;
 	StackBitset stack;
 	const char* error;
@@ -85,7 +85,7 @@ struct FunctionData
 		Fun callback;
 	};
 
-	LogicCodeState* state;
+	std::refcount_ptr<VariableData> parentscope;
 	FunctionType type;
 	inline FunctionRuntime& get_runtimefn()
 	{
@@ -97,26 +97,34 @@ struct FunctionData
 	}
 	FunctionData()
 	{
-		state = NULL;
+		parentscope = {};
 		type = FunctionType::None;
 	}
 	using refcount_elem = std::RefCount<FunctionData>;
 	using refcount_ptr_elem = std::refcount_ptr<FunctionData, FunctionData>;
 	static refcount_elem* New(LogicCodeState* state, FunctionNative&& native)
 	{
-		auto refcount = std::malloc_t<refcount_elem>(sizeof(refcount_elem) +sizeof(FunctionNative));
+		auto refcountlen = sizeof(refcount_elem) + sizeof(FunctionNative);
+		auto refcount = std::malloc_t<refcount_elem>(refcountlen);
+		memset(refcount, 0, refcountlen);
+
 		refcount->count = 0;
 		refcount->obj.type = FunctionType::Native;
-		refcount->obj.state = state;
+		refcount->obj.parentscope = state->scope;
+
 		refcount->obj.get_nativefn() = native;
 		return refcount;
 	}
 	static refcount_elem* New(LogicCodeState* state, FunctionRuntime&& runtime)
 	{
-		auto refcount = std::malloc_t<refcount_elem>(sizeof(refcount_elem) + sizeof(FunctionRuntime));
+		auto refcountlen = sizeof(refcount_elem) + sizeof(FunctionRuntime);
+
+		auto refcount = std::malloc_t<refcount_elem>(refcountlen);
+		memset(refcount, 0, refcountlen);
+
 		refcount->count = 0;
 		refcount->obj.type = FunctionType::Runtime;
-		refcount->obj.state = state;
+		refcount->obj.parentscope = state->scope;
 		memset(&refcount->obj.get_runtimefn(), 0, sizeof(FunctionRuntime));
 		refcount->obj.get_runtimefn() = runtime;
 		return refcount;
