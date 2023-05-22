@@ -3,12 +3,36 @@
 #include <iostream>
 #include <memory>
 
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state, Light::CommandResult& command)
+std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSetFromCommand(LogicCodeState* state, Light::CommandResult& command)
 {
 
 	if (!state->CanRun())
 	{
 		return {};
+	}
+	auto v = PushCommand(state, command);
+	if (v > 0)
+	{
+		auto toremove = v;
+		auto valueindex = state->stack.sizeoffset() - v;
+		auto ret = state->stack.get(valueindex);
+		for (size_t i = 0; i < toremove; i++)
+		{
+			state->stack.pop();
+		}
+		return ret;
+	}
+	else
+	{
+		return {};
+	}
+}
+
+int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& command)
+{
+	if (!state->CanRun())
+	{
+		return 0;
 	}
 	if (command.resultType == Light::ResultType::Number)
 	{
@@ -21,7 +45,8 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 			v->set(ir, number->at(i) != '0');
 			ir--;
 		}
-		return v;
+		state->stack.push(v);
+		return 1;
 	}
 	else if (command.resultType == Light::ResultType::Label)
 	{
@@ -29,15 +54,20 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 
 		if (str->Equals("true") || str->Equals("TRUE"))
 		{
-			return std::bitsetdynamic::Make(true);
+			state->stack.push(std::bitsetdynamic::Make(true));
+
+			return 1;
 		}
 		else if (str->Equals("false") || str->Equals("FALSE"))
 		{
-			return std::bitsetdynamic::Make(false);
+			state->stack.push(std::bitsetdynamic::Make(false));
+			return 1;
 		}
 		else
 		{
-			return state->scope->GetValue(str->data());
+			state->stack.push(state->scope->GetValue(str->data()));
+
+			return 1;
 		}
 	}
 	else if (command.resultType == Light::ResultType::Expression)
@@ -45,29 +75,80 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 		auto& exp = command.expression;
 		if (exp->get_Count() == 1)
 		{
-			auto arg = GetValue(state, exp->at(0));
+			auto len = PushList(state, exp->at(0));
 			if (!state->CanRun())
 			{
 				if (!state->IsError())
 				{
 					state->error = "Don't use return in expression";
 				}
-				return {};
+				return 0;
 			}
-			return arg;
+			return len;
 		}
 	}
 	else if (command.resultType == Light::ResultType::Instruction)
 	{
-		ExecuteInstuctionShared(state, *command.instruction);
+		auto len = ExecuteInstuctionShared(state, *command.instruction);
 
-		return {};
+		return len;
 	}
-	return {};
+	return 0;
 }
 
 
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::GetValue(LogicCodeState* state, Light::List& current)
+std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSetFromList(LogicCodeState* state, Light::List& current)
+{
+	if (!state->CanRun())
+	{
+		return {};
+	}
+	auto v = PushList(state, current);
+	if (v > 0)
+	{
+		auto toremove = v;
+		auto valueindex = state->stack.sizeoffset() - toremove;
+		auto ret = state->stack.get(valueindex);
+
+		for (size_t i = 0; i < toremove; i++)
+		{
+			state->stack.pop();
+		}
+		return ret;
+	}
+	else
+	{
+		return {};
+	}
+
+}
+
+std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state)
+{
+	if (!state->CanRun())
+	{
+		return {};
+	}
+	auto v = state->stack.sizeoffset();
+	if (v > 0)
+	{
+		auto toremove = v;
+		auto valueindex = state->stack.sizeoffset() - toremove;
+		auto ret = state->stack.get(valueindex);
+
+		for (size_t i = 0; i < toremove; i++)
+		{
+			state->stack.pop();
+		}
+		return ret;
+	}
+	else
+	{
+		return {};
+	}
+}
+
+int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 {
 	if (!state->CanRun())
 	{
@@ -85,33 +166,33 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 			auto& currentopcode = typeexpr.str;
 			if (currentopcode->Equals("if"))
 			{
-				Std::If(state, current);
+				return Std::If(state, current);
 			}
 			else if (currentopcode->Equals("while"))
 			{
-				Std::While(state, current);
+				return Std::While(state, current);
 
 			}
 			else if (currentopcode->Equals("fun"))
 			{
-				Std::Fun(state, current);
+				return Std::Fun(state, current);
 			}
 			else if (currentopcode->Equals("return"))
 			{
-				Std::Return(state, current);
+				return Std::Return(state, current);
 			}
 
 			else if (currentopcode->Equals("const"))
 			{
-				Std::Const(state, current);
+				return Std::Const(state, current);
 			}
 			else if (currentopcode->Equals("var"))
 			{
-				Std::Var(state, current);
+				return Std::Var(state, current);
 			}
 			else if (currentopcode->Equals("case"))
 			{
-				Std::Case(state, current);
+				return Std::Case(state, current);
 			}
 			else if (currentopcode->Equals("i8"))
 			{
@@ -120,6 +201,10 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 			else if (currentopcode->Equals("ref"))
 			{
 				return Std::Ref(state, current);
+			}
+			else if (currentopcode->Equals("truthtable"))
+			{
+				return Std::TruthTable(state, current);
 			}
 			else
 			{
@@ -132,9 +217,9 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 						if (*type.coperator == Light::COperator::Set)
 						{
 							auto lenargs = instructionsize - 2;
-							Light::List values(lenargs,lenargs, &current.at(2));
-							
-							auto v2 = GetValue(state, values);
+							Light::List values(lenargs, lenargs, &current.at(2));
+
+							auto v2 = ToBitSetFromList(state, values);
 							if (!state->CanRun())
 							{
 								if (!state->IsError())
@@ -144,7 +229,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								return {};
 							}
 							statevd->SetVar(currentopcode->data(), v2);
-
+							return 0;
 						}
 					}
 				}
@@ -174,26 +259,26 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 
 								for (size_t i = 0; i < expressionlen; i++)
 								{
-									auto arg = GetValue(state, expression->at(i));
+									auto arg = ToBitSetFromList(state, expression->at(i));
 									if (!state->CanRun())
 									{
-										
+
 										if (!state->IsError())
 										{
 											state->error = "Don't use return in expression";
 										}
-										return {};
+										return 0;
 									}
-									newscope->SetConst(args[i], arg,false);
+									newscope->SetConst(args[i], arg, false);
 								}
 								state->scope = newscope;
 
-								ExecuteInstruction(state, *getfn->get_runtimefn().body);
+								auto len = ExecuteInstruction(state, *getfn->get_runtimefn().body);
 
 								state->scope = oldscope;
 
 								state->ret = false;
-								return newscope->ret;
+								return len;
 							}
 							else if (getfn->type == FunctionData::FunctionType::Native)
 							{
@@ -202,26 +287,25 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 								statestack.set_Offset(statestack.size());
 								for (size_t i = 0; i < expressionlen; i++)
 								{
-									auto arg = GetValue(state, expression->at(i));
+									PushList(state, expression->at(i));
 									if (!state->CanRun())
 									{
 										if (!state->IsError())
 										{
 											state->error = "Don't use return in expression";
 										}
-										return {};
+										return 0;
 									}
-									statestack.push(GetValue(state, expression->at(i)));
 								}
-								getfn->get_nativefn().callback(getfn.get(), state);
-								auto toremove = statestack.sizeoffset();
+								auto lenret = getfn->get_nativefn().callback(getfn.get(), state);
+								auto toremove = statestack.sizeoffset() - lenret;
 								for (size_t i = 0; i < toremove; i++)
 								{
 									state->stack.remove(0);
 								}
 								statestack.set_Offset(oldoffset);
 
-								return statevd->ret;
+								return lenret;
 							}
 						}
 					}
@@ -229,16 +313,15 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::Get
 			}
 
 
-			
+
 		}
 		if (instructionsize == 1)
 		{
-			return ToBitSet(state, current[0]);
+			return PushCommand(state, current[0]);
 		}
 
 	}
-	return {};
-
+	return 0;
 }
 
 std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Instruction& token)
@@ -252,42 +335,65 @@ std::refcount_ptr<LogicCodeState> LogicCode::Helper::IntrepreterLogic(Light::Ins
 	return state;
 }
 
-void LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruction& instruction)
+int LogicCode::Helper::ExecuteInstruction(LogicCodeState* state, Light::Instruction& instruction)
 {
 	if (!state->CanRun())
 	{
-		return;
+		return 0;
 	}
-
+	int ret = 0;
 	auto count = instruction.get_Count();
 
 	for (size_t i = 0; i < count; i++)
 	{
-		if (!state->CanRun())
-		{
-			break;
-		}
+		
 		auto& current = instruction[i];
 
 		auto oldoffset = state->stack.get_Offset();
 		state->stack.set_Offset(state->stack.size());
 
-		GetValue(state, current);
-
-		auto toremove = state->stack.sizeoffset();
-		for (size_t i = 0; i < toremove; i++)
-		{
-			state->stack.pop();
+		auto lenstack = PushList(state, current);
+		auto iserror = state->IsError();
+		if (!state->CanRun()) {
+			if (iserror)
+			{
+				auto toremove = state->stack.sizeoffset();
+				for (size_t i = 0; i < toremove; i++)
+				{
+					state->stack.pop();
+				}
+				state->stack.set_Offset(oldoffset);
+			}
+			else
+			{
+				auto toremove = state->stack.sizeoffset() - lenstack;
+				for (size_t i = 0; i < toremove; i++)
+				{
+					state->stack.pop();
+				}
+				state->stack.set_Offset(oldoffset);
+				ret = lenstack;
+			}
+			break;
 		}
-		state->stack.set_Offset(oldoffset);
+		else
+		{
+			auto toremove = state->stack.sizeoffset();
+			for (size_t i = 0; i < toremove; i++)
+			{
+				state->stack.pop();
+			}
+			state->stack.set_Offset(oldoffset);
+		}
 	}
+	return ret;
 }
 
-void LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Instruction& instruction)
+int LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Instruction& instruction)
 {
 	if (!state->CanRun())
 	{
-		return;
+		return 0;
 	}
 	auto oldscope = state->scope;
 	auto newscope = std::refcount_ptr<VariableData>::make();
@@ -295,7 +401,8 @@ void LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::In
 	state->scope = newscope;
 
 	
-	ExecuteInstruction(state, instruction);
+	auto len = ExecuteInstruction(state, instruction);
 
 	state->scope = oldscope;
+	return len;
 }

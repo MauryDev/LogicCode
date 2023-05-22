@@ -78,7 +78,7 @@ namespace std
 			return *this;
 			
 		}
-		inline refcount_ptr_t& operator=(refcount_ptr_t&& other)
+		inline refcount_ptr_t& operator=(refcount_ptr_t&& other) noexcept
 		{
 			if (other.ptr != this->ptr)
 			{

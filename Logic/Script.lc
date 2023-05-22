@@ -1,1 +1,3 @@
-print(01,10);
+truthtable (A,B)@{
+	return and(A,B);
+};

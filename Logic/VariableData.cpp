@@ -1,5 +1,6 @@
 #include "VariableData.h"
 #include <iostream>
+
 VariableData::VariableData()
 {
     parent = {};

@@ -182,6 +182,9 @@
     <ClInclude Include="Stack.h" />
     <ClInclude Include="VariableData.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Texto.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
