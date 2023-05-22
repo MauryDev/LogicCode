@@ -1,1 +1,4 @@
 truthtable;
+
+
+stack typed;

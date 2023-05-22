@@ -1,6 +1,7 @@
 #include "LogicCodeSTD.h"
 #include "LogicCodeHelper.h"
 #include <iostream>
+#include<iomanip>
 #include "refcount_ptr.h"
 #include <cmath>
 
@@ -1004,11 +1005,28 @@ int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 		auto looplen = expressionlen * 2;
 		std::vector<std::string> argsname;
 		auto inputs = std::bitsetdynamic::Make((size_t)expressionlen);
-
+		auto totalWidth = 7;
 		for (size_t i = 0; i < expressionlen; i++)
 		{
-			argsname.push_back(expression->at(i).at(0).str->data());
+			auto str = expression->at(i).at(0).str;
+			auto str_size = str->size();
+			argsname.push_back(str->data());
+			if (str_size + 1 > totalWidth)
+			{
+				totalWidth = str_size + 1;
+			}
 		}
+		
+
+		bool first = true;
+		for (auto& element : argsname)
+		{
+			std::cout << std::setw(totalWidth) << std::left << element;
+
+		}
+		std::cout << "| ";
+		std::cout << std::setw(totalWidth) << std::left << "result";
+		std::cout << std::endl;
 		for (size_t i = 0; i < looplen; i++)
 		{
 			auto oldoffset = state->stack.get_Offset();
@@ -1022,7 +1040,10 @@ int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 
 			for (size_t i2 = 0; i2 < expressionlen; i2++)
 			{
-				newscope->SetConst(argsname[i2], std::bitsetdynamic::Make(inputs->get(i2)),false);
+				auto currentv = inputs->get(i2);
+				std::cout << std::setw(totalWidth) << std::left << currentv;
+
+				newscope->SetConst(argsname[i2], std::bitsetdynamic::Make(currentv),false);
 			}
 			Helper::ExecuteInstruction(state, *instruction);
 
@@ -1031,12 +1052,10 @@ int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 			state->ret = false;
 			state->stack.set_Offset(oldoffset);
 
-			auto returnv = Helper::ToBitSet(state);
+			auto returnv = Helper::ToBitSet(state)->get(0);
 
 
-
-			std::cout << returnv->to_string() << std::endl;
-
+			std::cout << "| " << std::setw(totalWidth) << std::left << returnv << std::endl;
 
 			__Inc(inputs);
 		}

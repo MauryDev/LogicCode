@@ -45,7 +45,6 @@ namespace LogicCode::Std
 	int TruthTable(LogicCodeState* state, Light::List& current);
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
-
 	int8_t __Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
 	bool __ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
 

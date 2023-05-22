@@ -315,6 +315,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 
 
 		}
+
 		if (instructionsize == 1)
 		{
 			return PushCommand(state, current[0]);
