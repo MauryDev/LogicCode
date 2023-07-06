@@ -1,7 +1,7 @@
 #pragma once
 #include <Light.h>
-#include "VariableData.h"
-#include "bitsetdynamic.h"
+#include "VariableData.hpp"
+#include "bitsetdynamic.hpp"
 #include "LogicCodeHelper.h"
 namespace LogicCode::Std
 {	
@@ -32,7 +32,7 @@ namespace LogicCode::Std
 	int Buffer(FunctionData* __this, LogicCodeState* state);
 	int Zero(FunctionData* __this, LogicCodeState* state);
 	int One(FunctionData* __this, LogicCodeState* state);
-	int i8(LogicCodeState* state, Light::List& current);
+	int Intv(LogicCodeState* state, Light::List& current);
 	int Ref(LogicCodeState* state, Light::List& current);
 	int Mux(FunctionData* __this, LogicCodeState* state);
 	int Demux(FunctionData* __this, LogicCodeState* state);

@@ -2,12 +2,14 @@
 #include <Light.h>
 #include <fstream>
 #include <sstream>
-#include "VariableData.h"
+#include "VariableData.hpp"
 #include "LogicCodeHelper.h"
 #include <chrono>
 #include <Windows.h>
-#include "refcount_ptr.h"
+#include "refcount_ptr.hpp"
+#include "LogicObject.hpp"
 std::string slurp(std::ifstream& in) {
+    
     std::ostringstream sstr;
     sstr << in.rdbuf();
     return sstr.str();

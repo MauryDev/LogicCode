@@ -1,4 +1,5 @@
-#pragma once
+#ifndef Logic_refcount_ptr_HPP
+#define Logic_refcount_ptr_HPP
 #include <malloc.h>
 #include <utility>
 namespace std
@@ -61,6 +62,7 @@ namespace std
 			v.inc_ref();
 			ptr = v.ptr;
 		}
+
 		refcount_ptr(const refcount_ptr_t& v)
 		{
 			v.inc_ref();
@@ -156,3 +158,5 @@ namespace std
 	};
 	
 }
+
+#endif

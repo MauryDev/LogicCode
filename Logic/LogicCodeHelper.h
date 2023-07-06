@@ -1,16 +1,19 @@
 #pragma once
-#include "VariableData.h"
+#include "VariableData.hpp"
 #include <memory>
-#include "refcount_ptr.h"
+#include "refcount_ptr.hpp"
+#include "LogicObject.hpp"
+#include "LogicState.hpp"
+
 namespace LogicCode::Helper
 {
 	
-	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> ToBitSetFromCommand(LogicCodeState* state,Light::CommandResult& command);
+	LogicCode::Object::refcount_ptr_elem ToBitSetFromCommand(LogicCodeState* state,Light::CommandResult& command);
 	int PushCommand(LogicCodeState* state, Light::CommandResult& command);
 
-	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> ToBitSetFromList(LogicCodeState* state,Light::List& current);
+	LogicCode::Object::refcount_ptr_elem ToBitSetFromList(LogicCodeState* state,Light::List& current);
 	
-	std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> ToBitSet(LogicCodeState* state);
+	LogicCode::ObjectView<std::bitsetdynamic> ToBitSet(LogicCodeState* state);
 	int PushList(LogicCodeState* state, Light::List& current);
 
 	

@@ -2,8 +2,9 @@
 #include "LogicCodeSTD.h"
 #include <iostream>
 #include <memory>
-
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSetFromCommand(LogicCodeState* state, Light::CommandResult& command)
+#include "LogicObjectHelper.hpp"
+#include "LogicFunctionData.hpp"
+LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToBitSetFromCommand(LogicCodeState* state, Light::CommandResult& command)
 {
 
 	if (!state->CanRun())
@@ -13,6 +14,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 	auto v = PushCommand(state, command);
 	if (v > 0)
 	{
+
 		auto toremove = v;
 		auto valueindex = state->stack.sizeoffset() - v;
 		auto ret = state->stack.get(valueindex);
@@ -38,7 +40,7 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 	{
 		auto number = command.str;
 		auto numberlen = number->size();
-		auto v = std::bitsetdynamic::Make(numberlen);
+		auto v = LogicCode::ObjectHelper::NewBitset(numberlen);
 		int ir = numberlen - 1;
 		for (size_t i = 0; i < numberlen; i++)
 		{
@@ -54,13 +56,17 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 
 		if (str->Equals("true") || str->Equals("TRUE"))
 		{
-			state->stack.push(std::bitsetdynamic::Make(true));
+			auto bitset = ObjectHelper::NewBitset((size_t)1);
+			bitset->set(0, true);
+			state->stack.push(bitset);
 
 			return 1;
 		}
 		else if (str->Equals("false") || str->Equals("FALSE"))
 		{
-			state->stack.push(std::bitsetdynamic::Make(false));
+			auto bitset = ObjectHelper::NewBitset((size_t)1);
+			bitset->set(0, false);
+			state->stack.push(bitset);
 			return 1;
 		}
 		else
@@ -97,7 +103,7 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 }
 
 
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSetFromList(LogicCodeState* state, Light::List& current)
+LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToBitSetFromList(LogicCodeState* state, Light::List& current)
 {
 	if (!state->CanRun())
 	{
@@ -123,7 +129,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 
 }
 
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state)
+LogicCode::ObjectView<std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state)
 {
 	if (!state->CanRun())
 	{
@@ -140,7 +146,7 @@ std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Helper::ToB
 		{
 			state->stack.pop();
 		}
-		return ret;
+		return { ret };
 	}
 	else
 	{
@@ -194,9 +200,9 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 			{
 				return Std::Case(state, current);
 			}
-			else if (currentopcode->Equals("i8"))
+			else if (currentopcode->Equals("int"))
 			{
-				return Std::i8(state, current);
+				return Std::Intv(state, current);
 			}
 			else if (currentopcode->Equals("ref"))
 			{

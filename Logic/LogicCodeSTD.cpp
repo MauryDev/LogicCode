@@ -1,10 +1,11 @@
 #include "LogicCodeSTD.h"
 #include "LogicCodeHelper.h"
 #include <iostream>
-#include<iomanip>
-#include "refcount_ptr.h"
+#include <iomanip>
+#include "refcount_ptr.hpp"
 #include <cmath>
-
+#include "LogicObjectHelper.hpp"
+#include "LogicFunctionData.hpp"
 int LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 {
 	auto& stack = state->stack;
@@ -12,13 +13,13 @@ int LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len > 0)
 	{
-		auto retv = std::bitsetdynamic::Copy(stack.get(0));
-
+		auto first = stack.get(0)->GetBitset();
+		auto retv = ObjectHelper::NewBitset(first->size());
 		auto sizeinput = retv->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.get(i)->GetBitset();
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -44,13 +45,13 @@ int LogicCode::Std::Or(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len > 0)
 	{
-
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
+		auto first = stack.get(0)->GetBitset();
+		auto firstparam = ObjectHelper::NewBitset(first->size());
 		auto sizeinput = firstparam->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.get(i)->GetBitset();
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -80,15 +81,16 @@ int LogicCode::Std::Not(FunctionData* __this, LogicCodeState* state)
 	if (len == 1)
 	{
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
+		auto first = stack.get(0)->GetBitset();
+		auto retv = ObjectHelper::NewBitset(first->size());
 
-		auto sizeinput = firstparam->size();
+		auto sizeinput = retv->size();
 
 		for (size_t i = 0; i < sizeinput; i++)
 		{
-			firstparam->set(i, !firstparam->get(i));
+			retv->set(i, !retv->get(i));
 		}
-		stack.push(firstparam);
+		stack.push(retv);
 		return 1;
 
 	}
@@ -102,13 +104,14 @@ int LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len > 0)
 	{
+		auto first = stack.get(0)->GetBitset();
+		auto firstparam = ObjectHelper::NewBitset(first->size());
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
 		auto sizeinput = firstparam->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.get(i)->GetBitset();
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -135,15 +138,14 @@ int LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len > 0)
 	{
+		auto first = stack.get(0)->GetBitset();
+		auto firstparam = ObjectHelper::NewBitset(first->size());
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
-
-		scope->SetRet(firstparam);
 		auto sizeinput = firstparam->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.get(i)->GetBitset();
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -176,13 +178,14 @@ int LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* state)
 	if (len > 0)
 	{
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
+		auto first = stack.getasview<std::bitsetdynamic>(0);
+		auto firstparam = ObjectHelper::NewBitset(first->size());
 
 		auto sizeinput = firstparam->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.getasview<std::bitsetdynamic>(i);
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -215,13 +218,14 @@ int LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* state)
 	if (len > 0)
 	{
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
+		auto first = stack.getasview<std::bitsetdynamic>(0);
+		auto firstparam = ObjectHelper::NewBitset(first->size());
 
 		auto sizeinput = firstparam->size();
 
 		for (size_t i = 1; i < len; i++)
 		{
-			auto current = stack.get(i);
+			auto current = stack.getasview<std::bitsetdynamic>(i);
 			if (current->size() == sizeinput)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
@@ -254,6 +258,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 	{
 
 		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
 			if (!state->IsError())
@@ -264,11 +269,11 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1->size() == 0)
+		if (arg1.get() == NULL || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
-		auto condition = arg1->get(0);
+		auto condition = arg1bitset->get(0);
 
 		auto exp = current[2].expression;
 		if (condition)
@@ -283,7 +288,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 
 
 		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
-
+		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
 			if (!state->IsError())
@@ -295,7 +300,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1->size() == 0)
+		if (arg1.get() == NULL || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
@@ -305,7 +310,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 		auto exp2 = current[4].instruction;
 		if (_else->Equals("else"))
 		{
-			auto condition = arg1->get(0);
+			auto condition = arg1bitset->get(0);
 			if (condition)
 			{
 				return Helper::ExecuteInstuctionShared(state, *exp);
@@ -335,6 +340,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 	if (instructionsize == 3)
 	{
 		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
 			if (!state->IsError())
@@ -346,13 +352,13 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1->size() == 0)
+		if (arg1.get() == NULL || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
 		auto exp = current[2].instruction;
 
-		auto condition = arg1->get(0);
+		auto condition = arg1bitset->get(0);
 		int len = 0;
 		while (condition)
 		{
@@ -362,11 +368,12 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 				return len;
 			}
 			arg1 = Helper::ToBitSetFromCommand(state, current[1]);
-			if (arg1.get() == NULL || arg1->size() == 0)
+			arg1bitset = arg1->GetBitset();
+			if (arg1.get() == NULL || arg1bitset->size() == 0)
 			{
 				return _Error(state, "NULL Value or size == 0");
 			}
-			condition = arg1->get(0);
+			condition = arg1bitset->get(0);
 
 		}
 		return 0;
@@ -444,7 +451,7 @@ int LogicCode::Std::Print(FunctionData* __this, LogicCodeState* state)
 
 		for (size_t i = 0; i < len; i++)
 		{
-			auto result = stack.get(i);
+			auto result = stack.get(i)->GetBitset();
 			std::cout << result->to_string() << " ";
 		}
 
@@ -531,6 +538,7 @@ int LogicCode::Std::Case(LogicCodeState* state, Light::List& current)
 	if (instructionsize == 3)
 	{
 		auto bits = Helper::ToBitSetFromCommand(state, current[1]);
+		auto bits_ = bits->GetBitset();
 		if (!state->CanRun())
 		{
 			if (!state->IsError())
@@ -543,11 +551,11 @@ int LogicCode::Std::Case(LogicCodeState* state, Light::List& current)
 			}
 			return 0;
 		}
-		if (bits.get() == NULL || bits->size() == 0)
+		if (bits.get() == NULL || bits_->size() == 0)
 		{
 			return _Error(state, "NULL or zero size");
 		}
-		auto condition = bits->get(0);
+		auto condition = bits_->get(0);
 		if (condition)
 		{
 			return Helper::PushCommand(state, current[2]);
@@ -570,7 +578,13 @@ int LogicCode::Std::Buffer(FunctionData* __this, LogicCodeState* state)
 	if (len == 1)
 	{
 
-		auto firstparam = std::bitsetdynamic::Copy(stack.get(0));
+		auto first = stack.get(0)->GetBitset();
+		auto firstparam = ObjectHelper::NewBitset(first->size());
+		auto firstlen = first->size();
+		for (size_t i = 0; i < firstlen; i++)
+		{
+			firstparam->set(i, first->get(i));
+		}
 		stack.push(firstparam);
 		return 1;
 
@@ -586,10 +600,9 @@ int LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* state)
 	if (len == 1)
 	{
 
-		auto first = stack.get(0);
-		auto data = __Toi8(first);
-		auto ret = std::bitsetdynamic::Make((size_t)data);
-		for (uint8_t i = 0; i < data; i++)
+		auto first = stack.get(0)->GetInteger();
+		auto ret = ObjectHelper::NewBitset((size_t)first);
+		for (uint8_t i = 0; i < first; i++)
 		{
 			ret->set(i, false);
 		}
@@ -608,10 +621,9 @@ int LogicCode::Std::One(FunctionData* __this, LogicCodeState* state)
 	if (len == 1)
 	{
 
-		auto first = stack.get(0);
-		auto data = __Toi8(first);
-		auto ret = std::bitsetdynamic::Make((size_t)data);
-		for (uint8_t i = 0; i < data; i++)
+		auto first = stack.get(0)->GetInteger();
+		auto ret = ObjectHelper::NewBitset((size_t)first);
+		for (LogicInteger i = 0; i < first; i++)
 		{
 			ret->set(i, true);
 		}
@@ -623,7 +635,7 @@ int LogicCode::Std::One(FunctionData* __this, LogicCodeState* state)
 }
 
 
-int LogicCode::Std::i8(LogicCodeState* state, Light::List& current)
+int LogicCode::Std::Intv(LogicCodeState* state, Light::List& current)
 {
 	auto instructionsize = current.get_Count();
 
@@ -631,12 +643,9 @@ int LogicCode::Std::i8(LogicCodeState* state, Light::List& current)
 	{
 		auto numi8 = current[1].str;
 
-		int8_t num = (int8_t)std::strtol(numi8->data(), nullptr, 10);
-		auto refbits = std::bitsetdynamic::Make((size_t)8);
-		char* data = (char*)refbits->data();
-
-		memcpy(data, &num, sizeof(int8_t));
-		state->stack.push(refbits);
+		LogicInteger num = (LogicInteger)std::strtoll(numi8->data(), nullptr, 10);
+		auto val = ObjectHelper::NewInteger(num);
+		state->stack.push(val);
 		return 1;
 	}
 	return 0;
@@ -649,9 +658,9 @@ int LogicCode::Std::Ref(LogicCodeState* state, Light::List& current)
 	if (instructionsize == 2)
 	{
 		auto bits = current[1].str;
-
-		auto refbits = RefValue::NewBitSet(state, *bits);
-		state->stack.push(refbits);
+	
+		auto v = ObjectHelper::NewRefBitset(bits->data(), state->scope);
+		state->stack.push(v);
 
 		return 1;
 	}
@@ -666,13 +675,13 @@ int LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* state)
 	if (len >= 2)
 	{
 
-		auto selectbits = stack.get(0);
-		auto selectbits_i8 = __Toi8(selectbits);
+		auto selectbits = stack.get(0)->GetInteger();
 
 		auto lenargs = len - 1;
-		if (selectbits_i8 < lenargs)
+		if (selectbits < lenargs)
 		{
-			stack.push(std::bitsetdynamic::Copy(stack.get(selectbits_i8 + 1)));
+			auto selected = stack.get(selectbits + 1);
+			stack.push(selected);
 			return 1;
 		}
 
@@ -688,18 +697,17 @@ int LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
 	if (len >= 3)
 	{
 
-		auto selectbits = stack.get(0);
+		auto selectbits = stack.get(0)->GetInteger();
 		auto value = stack.get(1);
 
-		auto selectbits_i8 = __Toi8(selectbits);
 
 		auto lenargs = len - 2;
-		if (selectbits_i8 < lenargs)
+		if (selectbits < lenargs)
 		{
 
-			auto value_selected = stack.get(selectbits_i8 + 2);
-			auto valueref = (RefValue*)value_selected->data();
-			valueref->state->scope->SetVar(valueref->str(), value);
+			auto value_selected = stack.get(selectbits + 2).get();
+			auto refbitset = LogicRefBitset::FromObject(value_selected);
+			refbitset->scope->SetVar(refbitset->name.txt, value);
 			return 0;
 		}
 
@@ -715,17 +723,20 @@ int LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* state)
 	if (len >= 2)
 	{
 
-		auto selectbits = stack.get(0);
+		auto selectbits = stack.get(0)->GetInteger();
 
-		auto selectbits_i8 = __Toi8(selectbits);
 
 		auto lenargs = len - 1;
-		if (selectbits_i8 < lenargs)
+		if (selectbits < lenargs)
 		{
 
-			auto value_selected = stack.get(selectbits_i8 + 2);
-			auto valueref = (RefValue*)value_selected->data();
-			valueref->state->scope->SetVar(valueref->str(), std::bitsetdynamic::Make(true));
+			auto ret = ObjectHelper::NewBitset(true);
+
+			auto value_selected = stack.get(selectbits + 1).get();
+			auto refbitset = LogicRefBitset::FromObject(value_selected);
+
+
+			refbitset->scope->SetVar(refbitset->name.txt, ret.v);
 			return 0;
 		}
 
@@ -740,15 +751,15 @@ int LogicCode::Std::BitSelector(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len == 2)
 	{
-		auto bits = stack.get(0);
+		auto bits = stack.get(0)->GetBitset();
 
-		auto selectbits = stack.get(1);
-		auto selectbits_i8 = __Toi8(selectbits);
+		auto selectbits = stack.get(1)->GetInteger();
 
 		auto bitssize = bits->size();
-		if (selectbits_i8 < bitssize)
+		if (selectbits < bitssize)
 		{
-			stack.push(std::bitsetdynamic::Make(bits->get(selectbits_i8)));
+			auto newbit = ObjectHelper::NewBitset(bits->get(selectbits));
+			stack.push(newbit);
 			return 1;
 		}
 
@@ -763,13 +774,13 @@ int LogicCode::Std::Add(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len == 2)
 	{
-		auto value1 = stack.get(0);
-		auto value2 = stack.get(1);
+		auto value1 = stack.get(0)->GetBitset();
+		auto value2 = stack.get(1)->GetBitset();
 		auto value1size = value1->size();
 		auto value2size = value2->size();
 		if (value1size == value2size)
 		{
-			auto result = std::bitsetdynamic::Make(value1size);
+			auto result = ObjectHelper::NewBitset(value1size);
 
 			auto CarryIn = false;
 			for (size_t i = 0; i < value1size; i++)
@@ -803,13 +814,14 @@ int LogicCode::Std::Sub(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len == 2)
 	{
-		auto value1 = stack.get(0);
-		auto value2 = stack.get(1);
+		auto value1 = stack.get(0)->GetBitset();
+		auto value2 = stack.get(1)->GetBitset();
 		auto value1size = value1->size();
 		auto value2size = value2->size();
 		if (value1size == value2size)
 		{
-			auto result = std::bitsetdynamic::Make(value1size);
+			auto result = ObjectHelper::NewBitset(value1size);
+
 
 			auto BorrowIn = false;
 			for (size_t i = 0; i < value1size; i++)
@@ -839,15 +851,15 @@ int LogicCode::Std::Mul(FunctionData* __this, LogicCodeState* state)
 	auto len = stack.sizeoffset();
 	if (len == 2)
 	{
-		auto value1 = stack.get(0);
-		auto value2 = stack.get(1);
+		auto value1 = stack.get(0)->GetBitset();
+		auto value2 = stack.get(1)->GetBitset();
 		auto value1size = value1->size();
 		auto value2size = value2->size();
 		if (value1size == value2size)
 		{
 			auto mulresult = value1size * 2;
-			auto result = std::bitsetdynamic::Make(mulresult);
-			auto temp = std::bitsetdynamic::Make(value1size);
+			auto result = ObjectHelper::NewBitset(mulresult);
+			auto temp = ObjectHelper::NewBitset(value1size);
 			for (size_t i = 0; i < value1size; i++)
 			{
 				auto bitcurrent2 = value2->get(i);
@@ -887,10 +899,10 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 	auto& stack = state->stack;
 	auto& scope = state->scope;
 	auto len = stack.sizeoffset();
-	if (len == 2)
+	if (len >= 2)
 	{
-		auto value1 = stack.get(0);
-		auto value2 = stack.get(1);
+		auto value1 = stack.get(0)->GetBitset();
+		auto value2 = stack.get(1)->GetBitset();
 		auto value1size = value1->size();
 		auto value2size = value2->size();
 		if (value1size == value2size)
@@ -915,13 +927,14 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 			{
 				if (sizev1 == 0 || sizev2 > sizev1)
 				{
-					stack.push(std::bitsetdynamic::Make(value1size));
+					auto retv = ObjectHelper::NewBitset(value1size);
+					stack.push(retv);
 					return 1;
 				}
 
 				auto equalsdivsize = sizev2 == sizev1;
-				auto remainder = std::bitsetdynamic::Make(value1size);
-				auto quotient = std::bitsetdynamic::Make(value1size);
+				auto remainder = ObjectHelper::NewBitset(value1size);
+				auto quotient = ObjectHelper::NewBitset(value1size);
 				auto tempsize = equalsdivsize ? (size_t)sizev2 : (size_t)sizev2 + 1;
 				auto temp = std::bitsetdynamic::Make(tempsize);
 
@@ -951,10 +964,6 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 
 					}
 
-
-
-
-					// temp2 to temp1;
 					if (!BorrowIn)
 					{
 						for (size_t i2 = 0; i2 < tempsize; i2++)
@@ -981,7 +990,13 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 
 				}
 
+				if (len >= 3)
+				{
+					auto value_selected = stack.get(2).get();
+					auto refbitsett = LogicRefBitset::FromObject(value_selected);
+					refbitsett->scope->SetVar(refbitsett->name.txt, remainder.v);
 
+				}
 				stack.push(quotient);
 				return 1;
 			}
@@ -1042,8 +1057,8 @@ int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 			{
 				auto currentv = inputs->get(i2);
 				std::cout << std::setw(totalWidth) << std::left << currentv;
-
-				newscope->SetConst(argsname[i2], std::bitsetdynamic::Make(currentv),false);
+				auto v_bitset = ObjectHelper::NewBitset(currentv);
+				newscope->SetConst(argsname.at(i2), v_bitset.v,false);
 			}
 			Helper::ExecuteInstruction(state, *instruction);
 

@@ -1,15 +1,24 @@
-#pragma once
+#ifndef Logic_bitsetdynamic_HPP
+#define Logic_bitsetdynamic_HPP
 #include <vector>
 #include <string>
-#include "refcount_ptr.h"
+#include "refcount_ptr.hpp"
 namespace std
 {
 
 	class bitsetdynamic
 	{
     public:
+        inline static size_t GetBufferSize(size_t lenbits)
+        {
+            return (lenbits + 63) / 64;
+        }
+        inline static size_t GetMemorySize(size_t lenarr)
+        {
+            return sizeof(std::bitsetdynamic) + sizeof(std::bitsetdynamic::Bits) * lenarr;
+
+        }
         typedef unsigned long long Bits;
-	private:
 		size_t _size;
         inline Bits* _bits()
         {
@@ -24,8 +33,6 @@ namespace std
                 throw "i < 0";
             }
         }
-       
-	public:
         using refcount_elem = std::RefCount<bitsetdynamic>;
         using refcount_ptr_elem = std::refcount_ptr<bitsetdynamic, bitsetdynamic>;
         inline bitsetdynamic()
@@ -130,42 +137,43 @@ namespace std
             auto ret = malloc_t<refcount_elem>(lenmalloc);
             ret->count = 0;
             ret->obj._size = 0;
-
+            
             return ret;
 
         }
-        static inline refcount_ptr_elem Make()
+        static refcount_ptr_elem Make()
         {
             return refcount_ptr_elem::make();
         }
-        static inline refcount_ptr_elem Make(bool v)
+        static refcount_ptr_elem Make(bool v)
         {
             return refcount_ptr_elem::make(v);
         }
-        static inline refcount_ptr_elem Make(size_t len)
+        static refcount_ptr_elem Make(size_t len)
         {
             return refcount_ptr_elem::make(len);
         }
-        static inline refcount_ptr_elem Make(Bits* v, size_t n)
+        static refcount_ptr_elem Make(Bits* v, size_t n)
         {
             return refcount_ptr_elem::make(v,n);
         }
-        static inline void Free(refcount_elem* _this)
+        static void Free(refcount_elem* _this)
         {
+
             if (_this != NULL)
             {
                 free(_this);
             }
         }
-        static inline refcount_ptr_elem Copy(refcount_ptr_elem&& v)
+        static refcount_ptr_elem Copy(refcount_ptr_elem&& v)
         {
             return Make(v->data(), v->size());
         }
-        static inline refcount_ptr_elem Copy(refcount_ptr_elem& v)
+        static refcount_ptr_elem Copy(refcount_ptr_elem& v)
         {
             return Make(v->data(), v->size());
         }
 	};
 }
 
-
+#endif

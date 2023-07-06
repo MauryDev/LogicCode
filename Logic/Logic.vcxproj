@@ -158,13 +158,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="bitsetdynamic.cpp" />
     <ClCompile Include="Logic.cpp" />
     <ClCompile Include="LogicCodeHelper.cpp" />
     <ClCompile Include="LogicCodeSTD.cpp" />
-    <ClCompile Include="refcount_ptr.cpp" />
-    <ClCompile Include="Stack.cpp" />
-    <ClCompile Include="VariableData.cpp" />
+    <ClCompile Include="LogicObjectHelper.cpp" />
+    <ClCompile Include="LogicStructs.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Script.lc">
@@ -175,12 +173,21 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bitsetdynamic.h" />
+    <ClInclude Include="bitsetdynamic.hpp" />
     <ClInclude Include="LogicCodeHelper.h" />
     <ClInclude Include="LogicCodeSTD.h" />
-    <ClInclude Include="refcount_ptr.h" />
-    <ClInclude Include="Stack.h" />
-    <ClInclude Include="VariableData.h" />
+    <ClInclude Include="LogicFunctionData.hpp" />
+    <ClInclude Include="LogicObject.hpp">
+      <FileType>CppHeader</FileType>
+    </ClInclude>
+    <ClInclude Include="LogicObjectHelper.hpp" />
+    <ClInclude Include="LogicObjectView.hpp" />
+    <ClInclude Include="LogicRefBitset.hpp" />
+    <ClInclude Include="LogicState.hpp" />
+    <ClInclude Include="LogicString.hpp" />
+    <ClInclude Include="refcount_ptr.hpp" />
+    <ClInclude Include="StackObject.h" />
+    <ClInclude Include="VariableData.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Texto.txt" />
