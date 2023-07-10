@@ -24,7 +24,7 @@ int LogicCode::Std::And(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					retv->set(i, retv->get(i) && current->get(i));
+					retv->set(i, first->get(i) && current->get(i));
 				}
 			}
 			else
@@ -56,7 +56,7 @@ int LogicCode::Std::Or(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					firstparam->set(i, firstparam->get(i) || current->get(i));
+					firstparam->set(i, first->get(i) || current->get(i));
 				}
 			}
 			else
@@ -88,7 +88,7 @@ int LogicCode::Std::Not(FunctionData* __this, LogicCodeState* state)
 
 		for (size_t i = 0; i < sizeinput; i++)
 		{
-			retv->set(i, !retv->get(i));
+			retv->set(i, !first->get(i));
 		}
 		stack.push(retv);
 		return 1;
@@ -116,7 +116,7 @@ int LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					firstparam->set(i, firstparam->get(i) ^ current->get(i));
+					firstparam->set(i, first->get(i) ^ current->get(i));
 				}
 			}
 			else
@@ -150,7 +150,7 @@ int LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					firstparam->set(i, firstparam->get(i) && current->get(i));
+					firstparam->set(i, first->get(i) && current->get(i));
 				}
 			}
 			else
@@ -190,7 +190,7 @@ int LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					firstparam->set(i, firstparam->get(i) || current->get(i));
+					firstparam->set(i, first->get(i) || current->get(i));
 				}
 			}
 			else
@@ -230,7 +230,7 @@ int LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* state)
 			{
 				for (size_t i = 0; i < sizeinput; i++)
 				{
-					firstparam->set(i, firstparam->get(i) ^ current->get(i));
+					firstparam->set(i, first->get(i) ^ current->get(i));
 				}
 			}
 			else
@@ -451,14 +451,52 @@ int LogicCode::Std::Print(FunctionData* __this, LogicCodeState* state)
 
 		for (size_t i = 0; i < len; i++)
 		{
-			auto result = stack.get(i)->GetBitset();
-			std::cout << result->to_string() << " ";
+			if (i > 0)
+			{
+				std::cout << " ";
+
+			}
+			_Print(stack.get(i));
+			
 		}
 
 		std::cout << std::endl;
 
 	}
 	return 0;
+}
+
+void LogicCode::Std::_Print(Object::refcount_ptr_elem& obj)
+{
+	if (!obj || obj->CheckType(ObjectType::None))
+	{
+		std::cout << "None";
+	}
+	else if (obj->CheckType(ObjectType::Bitset))
+	{
+		auto result = obj->GetBitset();
+		std::cout << result->to_string();
+	}
+	else if (obj->CheckType(ObjectType::Integer))
+	{
+		auto result = obj->GetInteger();
+		std::cout << result;
+	}
+	else if (obj->CheckType(ObjectType::Number))
+	{
+		auto result = obj->GetNumber();
+		std::cout << result;
+	}
+	else if (obj->CheckType(ObjectType::RefBitset))
+	{
+		
+		std::cout << "Reference: " << obj.get();
+	}
+	else if (obj->CheckType(ObjectType::String))
+	{
+		auto result = obj->GetString();
+		std::cout.write(result->txt, result->size);
+	}
 }
 
 int LogicCode::Std::Const(LogicCodeState* state, Light::List& current)
@@ -651,6 +689,21 @@ int LogicCode::Std::Intv(LogicCodeState* state, Light::List& current)
 	return 0;
 }
 
+int LogicCode::Std::Numv(LogicCodeState* state, Light::List& current)
+{
+	auto instructionsize = current.get_Count();
+
+	if (instructionsize == 2)
+	{
+		auto numi8 = current[1].str;
+		LogicNumber num = (LogicNumber)strtod(numi8->data(), nullptr);
+		auto val = ObjectHelper::NewNumber(num);
+		state->stack.push(val);
+		return 1;
+	}
+	return 0;
+}
+
 int LogicCode::Std::Ref(LogicCodeState* state, Light::List& current)
 {
 	auto instructionsize = current.get_Count();
@@ -707,7 +760,7 @@ int LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* state)
 
 			auto value_selected = stack.get(selectbits + 2).get();
 			auto refbitset = LogicRefBitset::FromObject(value_selected);
-			refbitset->scope->SetVar(refbitset->name.txt, value);
+			refbitset->SetValue(value);
 			return 0;
 		}
 
@@ -734,7 +787,7 @@ int LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* state)
 
 			auto value_selected = stack.get(selectbits + 1).get();
 			auto refbitset = LogicRefBitset::FromObject(value_selected);
-
+			refbitset->SetValue(ret.v);
 
 			refbitset->scope->SetVar(refbitset->name.txt, ret.v);
 			return 0;
@@ -994,8 +1047,7 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 				{
 					auto value_selected = stack.get(2).get();
 					auto refbitsett = LogicRefBitset::FromObject(value_selected);
-					refbitsett->scope->SetVar(refbitsett->name.txt, remainder.v);
-
+					refbitsett->SetValue(remainder.v);
 				}
 				stack.push(quotient);
 				return 1;
@@ -1152,20 +1204,4 @@ int LogicCode::Std::_Error(LogicCodeState* state, const char* v)
 {
 	state->error = v;
 	return 0;
-}
-
-const char* LogicCode::Std::RefValue::str()
-{
-	return (const char*)(this + 1);
-}
-
-std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> LogicCode::Std::RefValue::NewBitSet(LogicCodeState* state, Light::string_view& str)
-{
-	const auto lenv = sizeof(state) + str.size() + 1;
-	auto refbits = std::bitsetdynamic::Make(lenv * 8);
-
-	RefValue* data = (RefValue*)refbits->data();
-	data->state = state;
-	memcpy((void*)data->str(), str.data(), str.size() + 1);
-	return refbits;
 }

@@ -100,6 +100,12 @@ namespace std
 		{
 			return ptr->obj;
 		}
+		inline operator bool()
+		{
+			return ptr != NULL;
+		}
+		
+		
 		inline t_ptr get()
 		{
 			return &ptr->obj;

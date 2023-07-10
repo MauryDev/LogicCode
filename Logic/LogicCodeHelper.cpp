@@ -76,6 +76,12 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 			return 1;
 		}
 	}
+	else if (command.resultType == Light::ResultType::String)
+	{
+		auto str = command.str;
+
+		state->stack.push(ObjectHelper::NewString(str->data()));
+	}
 	else if (command.resultType == Light::ResultType::Expression)
 	{
 		auto& exp = command.expression;
@@ -203,6 +209,10 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 			else if (currentopcode->Equals("int"))
 			{
 				return Std::Intv(state, current);
+			}
+			else if (currentopcode->Equals("num"))
+			{
+				return Std::Numv(state, current);
 			}
 			else if (currentopcode->Equals("ref"))
 			{

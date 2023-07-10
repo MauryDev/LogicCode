@@ -15,7 +15,7 @@ namespace LogicCode
 		Var,
 		Function
 	};
-	enum class ObjectType : int8_t
+	enum class ObjectType : int32_t
 	{
 		None,
 		Bitset, // bitset

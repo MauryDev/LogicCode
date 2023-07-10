@@ -6,13 +6,6 @@
 namespace LogicCode::Std
 {	
 
-	struct RefValue
-	{
-		LogicCodeState* state;
-
-		const char* str();
-		static std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic> NewBitSet(LogicCodeState* state,Light::string_view& str);
-	};
 	int And(FunctionData* __this, LogicCodeState* state);
 	int Or(FunctionData* __this, LogicCodeState* state);
 	int Not(FunctionData* __this, LogicCodeState* state);
@@ -26,6 +19,8 @@ namespace LogicCode::Std
 	int Fun(LogicCodeState* state, Light::List& current);
 	int Return(LogicCodeState* state, Light::List& current);
 	int Print(FunctionData* __this, LogicCodeState* state);
+	void _Print(Object::refcount_ptr_elem& obj);
+
 	int Const(LogicCodeState* state, Light::List& current);
 	int Var(LogicCodeState* state, Light::List& current);
 	int Case(LogicCodeState* state, Light::List& current);
@@ -33,6 +28,8 @@ namespace LogicCode::Std
 	int Zero(FunctionData* __this, LogicCodeState* state);
 	int One(FunctionData* __this, LogicCodeState* state);
 	int Intv(LogicCodeState* state, Light::List& current);
+	int Numv(LogicCodeState* state, Light::List& current);
+
 	int Ref(LogicCodeState* state, Light::List& current);
 	int Mux(FunctionData* __this, LogicCodeState* state);
 	int Demux(FunctionData* __this, LogicCodeState* state);

@@ -26,12 +26,14 @@ LogicCode::ObjectView<LogicCode::LogicInteger> LogicCode::ObjectHelper::NewInteg
 LogicCode::ObjectView<std::bitsetdynamic> LogicCode::ObjectHelper::NewBitset(size_t len)
 {
 	auto lenarr = std::bitsetdynamic::GetBufferSize(len);
-	ObjectView<std::bitsetdynamic> variable = { Object::refcount_ptr_elem::make(lenarr) };
+	auto lenobj = std::bitsetdynamic::GetMemorySize(lenarr);
+	ObjectView<std::bitsetdynamic> variable = { Object::refcount_ptr_elem::make(lenobj) };
 	variable.v->type = ObjectType::Bitset;
 
 	auto& bd = variable.v->data<std::bitsetdynamic>();
-	bd._size = len;
-	memset(bd.data(), 0, sizeof(std::bitsetdynamic::Bits) * lenarr);
+	variable->_size = len;
+	
+	memset(variable->data(), 0, sizeof(std::bitsetdynamic::Bits) * lenarr);
 
 	return variable;
 }
@@ -66,7 +68,7 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 	}
 
 
-	ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size) };
+	ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size + 1 + sizeof(LogicString)) };
 	variable.v->type = ObjectType::String;
 
 	auto& str = variable.v->data<LogicString>();

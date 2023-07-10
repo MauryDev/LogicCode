@@ -10,11 +10,25 @@ namespace LogicCode
 	{
 		std::refcount_ptr<VariableData> scope;
 		LogicString name;
+		Object::refcount_ptr_elem GetValue()
+		{
+			return scope->GetValue(name.txt);
+		}
+		void SetValue(Object::refcount_ptr_elem& v,bool checkparent = true)
+		{
+			scope->SetVar(name.txt,v, checkparent);
+		}
 		static LogicRefBitset* FromObject(LogicCode::Object& _this) {
 			return (_this.type == ObjectType::RefBitset ? _this.ptr<LogicRefBitset>() : nullptr);
 		}
 		static LogicRefBitset* FromObject(LogicCode::Object* _this) {
 			return FromObject(*_this);
+		}
+		static LogicRefBitset* FromObject(Object::refcount_ptr_elem& _this) {
+			return FromObject(_this.get());
+		}
+		static LogicRefBitset* FromObject(Object::refcount_ptr_elem&& _this) {
+			return FromObject(_this.get());
 		}
 	};
 }
