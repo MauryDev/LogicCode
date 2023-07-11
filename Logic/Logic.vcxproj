@@ -161,6 +161,8 @@
     <ClCompile Include="Logic.cpp" />
     <ClCompile Include="LogicCodeHelper.cpp" />
     <ClCompile Include="LogicCodeSTD.cpp" />
+    <ClCompile Include="LogicFunctionObject.hpp" />
+    <ClCompile Include="LogicObject.cpp" />
     <ClCompile Include="LogicObjectHelper.cpp" />
     <ClCompile Include="LogicStructs.hpp" />
   </ItemGroup>

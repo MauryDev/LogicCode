@@ -12,8 +12,7 @@ namespace LogicCode
 	{
 		None,
 		Const,
-		Var,
-		Function
+		Var
 	};
 	enum class ObjectType : int32_t
 	{

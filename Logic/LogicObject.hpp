@@ -44,6 +44,8 @@ namespace LogicCode
 		{
 			auto lenmalloc = sizeof(refcount_elem) + len;
 			auto ret = std::malloc_t<refcount_elem>(lenmalloc);
+			memset(ret, 0, lenmalloc);
+
 			ret->count = 0;
 			ret->obj.type = ObjectType::None;
 
@@ -94,14 +96,8 @@ namespace LogicCode
 		}
 		
 
-		static void Free(refcount_elem* _this)
-		{
-			if (_this != NULL)
-			{
-				//auto vtype = _this->obj.type;
-				free(_this);
-			}
-		}
+		static void Free(refcount_elem* _this);
+		
 		
 	};
 }

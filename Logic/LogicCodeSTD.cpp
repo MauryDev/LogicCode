@@ -269,7 +269,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1bitset->size() == 0)
+		if (!arg1 || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
@@ -300,7 +300,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1bitset->size() == 0)
+		if (!arg1 || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
@@ -352,7 +352,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 				return 0;
 			}
 		}
-		if (arg1.get() == NULL || arg1bitset->size() == 0)
+		if (!arg1 || arg1bitset->size() == 0)
 		{
 			return _Error(state, "NULL Value or size == 0");
 		}
@@ -369,7 +369,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 			}
 			arg1 = Helper::ToBitSetFromCommand(state, current[1]);
 			arg1bitset = arg1->GetBitset();
-			if (arg1.get() == NULL || arg1bitset->size() == 0)
+			if (!arg1|| arg1bitset->size() == 0)
 			{
 				return _Error(state, "NULL Value or size == 0");
 			}
@@ -396,14 +396,17 @@ int LogicCode::Std::Fun(LogicCodeState* state, Light::List& current)
 		auto argsname = current[2].expression;
 		auto argscount = argsname->get_Count();
 
-		auto data = FunctionData::Make(state, FunctionData::FunctionRuntime{});
+		auto fnobj = ObjectHelper::NewFunctionRuntime(state, {});
+		auto& fruntime = fnobj->data()->get_runtimefn();
+
+		fruntime.body = current[3].instruction;
 
 		for (size_t i = 0; i < argscount; i++)
 		{
-			data->get_runtimefn().argsname.push_back(argsname->at(i)[0].str->data());
+			fruntime.argsname.push_back(argsname->at(i)[0].str->data());
 		}
-		data->get_runtimefn().body = current[3].instruction;
-		state->scope->SetFunction(fnname->data(), data);
+
+		state->scope->SetVar(fnname->data(), fnobj.v);
 	}
 	return 0;
 }
@@ -589,7 +592,7 @@ int LogicCode::Std::Case(LogicCodeState* state, Light::List& current)
 			}
 			return 0;
 		}
-		if (bits.get() == NULL || bits_->size() == 0)
+		if (!bits || bits_->size() == 0)
 		{
 			return _Error(state, "NULL or zero size");
 		}
@@ -1178,25 +1181,28 @@ bool LogicCode::Std::__ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetd
 
 void LogicCode::Std::__Init(LogicCodeState* state)
 {
-	state->scope->SetFunction("and", FunctionData::Make(state, { And }));
-	state->scope->SetFunction("or", FunctionData::Make(state, { Or }));
-	state->scope->SetFunction("not", FunctionData::Make(state, { Not }));
-	state->scope->SetFunction("xor", FunctionData::Make(state, { Xor }));
-	state->scope->SetFunction("nand", FunctionData::Make(state, { Nand }));
-	state->scope->SetFunction("nor", FunctionData::Make(state, { Nor }));
-	state->scope->SetFunction("xnor", FunctionData::Make(state, { Xnor }));
-	state->scope->SetFunction("print", FunctionData::Make(state, { Print }));
-	state->scope->SetFunction("buffer", FunctionData::Make(state, { Buffer }));
-	state->scope->SetFunction("zero", FunctionData::Make(state, { Zero }));
-	state->scope->SetFunction("one", FunctionData::Make(state, { One }));
-	state->scope->SetFunction("mux", FunctionData::Make(state, { Mux }));
-	state->scope->SetFunction("demux", FunctionData::Make(state, { Demux }));
-	state->scope->SetFunction("decoder", FunctionData::Make(state, { Decoder }));
-	state->scope->SetFunction("bitselector", FunctionData::Make(state, { BitSelector }));
-	state->scope->SetFunction("add", FunctionData::Make(state, { Add }));
-	state->scope->SetFunction("sub", FunctionData::Make(state, { Sub }));
-	state->scope->SetFunction("mul", FunctionData::Make(state, { Mul }));
-	state->scope->SetFunction("div", FunctionData::Make(state, { Div }));
+	auto scope = state->scope;
+	scope->SetVar("and", ObjectHelper::NewFunctionNative(state, { And }).v);
+	scope->SetVar("or", ObjectHelper::NewFunctionNative(state, { Or }).v);
+	scope->SetVar("not", ObjectHelper::NewFunctionNative(state, { Not }).v);
+
+	
+	scope->SetVar("xor", ObjectHelper::NewFunctionNative(state, { Xor }).v);
+	scope->SetVar("nand", ObjectHelper::NewFunctionNative(state, { Nand }).v);
+	scope->SetVar("nor", ObjectHelper::NewFunctionNative(state, { Nor }).v);
+	scope->SetVar("xnor", ObjectHelper::NewFunctionNative(state, { Xnor }).v);
+	scope->SetVar("print", ObjectHelper::NewFunctionNative(state, { Print }).v);
+	scope->SetVar("buffer", ObjectHelper::NewFunctionNative(state, { Buffer }).v);
+	scope->SetVar("zero", ObjectHelper::NewFunctionNative(state, { Zero }).v);
+	scope->SetVar("one", ObjectHelper::NewFunctionNative(state, { One }).v);
+	scope->SetVar("mux", ObjectHelper::NewFunctionNative(state, { Mux }).v);
+	scope->SetVar("demux", ObjectHelper::NewFunctionNative(state, { Demux }).v);
+	scope->SetVar("decoder", ObjectHelper::NewFunctionNative(state, { Decoder }).v);
+	scope->SetVar("bitselector", ObjectHelper::NewFunctionNative(state, { BitSelector }).v);
+	scope->SetVar("add", ObjectHelper::NewFunctionNative(state, { Add }).v);
+	scope->SetVar("sub", ObjectHelper::NewFunctionNative(state, { Sub }).v);
+	scope->SetVar("mul", ObjectHelper::NewFunctionNative(state, { Mul }).v);
+	scope->SetVar("div", ObjectHelper::NewFunctionNative(state, { Div }).v);
 
 }
 

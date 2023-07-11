@@ -78,3 +78,39 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 	return variable;
 
 }
+
+LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative& fnative)
+{
+	auto len = LogicFunctionObject::GetMemorySize(FunctionData::FunctionType::Native);
+	ObjectView<LogicFunctionObject> variable = { Object::refcount_ptr_elem::make(len) };
+	auto logicfnobj = variable->data();
+
+	logicfnobj->type = FunctionData::FunctionType::Native;
+	logicfnobj->parentscope = state->scope;
+	logicfnobj->get_nativefn() = fnative;
+	variable.v->type = ObjectType::Function;
+	return variable;
+}
+
+LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative&& fnative)
+{
+	return NewFunctionNative(state,fnative);
+}
+
+LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime& fruntime)
+{
+	auto len = LogicFunctionObject::GetMemorySize(FunctionData::FunctionType::Runtime);
+	ObjectView<LogicFunctionObject> variable = { Object::refcount_ptr_elem::make(len) };
+	auto logicfnobj = variable->data();
+	logicfnobj->type = FunctionData::FunctionType::Runtime;
+	logicfnobj->parentscope = state->scope;
+	logicfnobj->get_runtimefn() = fruntime;
+	
+	variable.v->type = ObjectType::Function;
+	return variable;
+}
+
+LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime&& fruntime)
+{
+	return NewFunctionRuntime(state,fruntime);
+}

@@ -1,6 +1,7 @@
 
 #ifndef Logic_VariableData_HPP
 #define Logic_VariableData_HPP
+struct FunctionData;
 #include <unordered_map>
 #include <Light.h>
 #include "refcount_ptr.hpp"
@@ -35,7 +36,7 @@ struct VariableData
 		{
 			return inconsts->second;
 		}
-		if (parent.get() != NULL)
+		if (parent)
 		{
 			return parent->GetValue(str);
 		}
@@ -46,43 +47,9 @@ struct VariableData
 		return GetValue(str);
 	}
 
-	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string& str, bool findfromparent = true)
-	{
-		auto infunctions = functions.find(str);
-		if (infunctions != functions.end())
-		{
-			return infunctions->second;
-		}
-		if (findfromparent && parent.get() != NULL)
-		{
-			return parent->GetFunction(str);
-		}
-		return {};
-	}
-	std::refcount_ptr<FunctionData, FunctionData> GetFunction(std::string&& str, bool findfromparent = true)
-	{
-		return GetFunction(str, findfromparent);
-	}
+	
 
-
-	void SetFunction(std::string&& str, std::refcount_ptr<FunctionData, FunctionData>&& value)
-	{
-		SetFunction(str, value);
-
-	}
-	void SetFunction(std::string&& str, std::refcount_ptr<FunctionData, FunctionData>& value)
-	{
-		SetFunction(str, value);
-
-	}
-	void SetFunction(std::string& str, std::refcount_ptr<FunctionData, FunctionData>&& value)
-	{
-		SetFunction(str, value);
-	}
-	void SetFunction(std::string& str, std::refcount_ptr<FunctionData, FunctionData>& value)
-	{
-		functions[str] = value;
-	}
+	
 
 	bool Exists(std::string& str, bool checkparent = true)
 	{
@@ -96,13 +63,7 @@ struct VariableData
 		{
 			return true;
 		}
-
-		auto infunctions = functions.find(str);
-		if (infunctions != functions.end())
-		{
-			return true;
-		}
-		if (checkparent && parent.get() != NULL)
+		if (checkparent && parent)
 		{
 			return parent->Exists(str);
 		}
@@ -125,12 +86,8 @@ struct VariableData
 		{
 			return LogicCode::VarType::Const;
 		}
-		auto infunctions = functions.find(str);
-		if (infunctions != functions.end())
-		{
-			return LogicCode::VarType::Function;
-		}
-		if (checkparent && parent.get() != NULL)
+		
+		if (checkparent && parent)
 		{
 			return parent->GetTypeVariable(str);
 		}

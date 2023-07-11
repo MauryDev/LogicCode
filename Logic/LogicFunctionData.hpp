@@ -69,12 +69,17 @@ struct FunctionData
 		refcount->obj.get_runtimefn() = runtime;
 		return refcount;
 	}
+	
+	static void Free(FunctionData* fdata)
+	{
+		if (fdata->type == FunctionType::Runtime)
+		{
+			fdata->get_runtimefn().argsname.~vector();
+		}
+	}
 	static void Free(refcount_elem* __this)
 	{
-		if (__this->obj.type == FunctionType::Runtime)
-		{
-			__this->obj.get_runtimefn().argsname.~vector();
-		}
+		Free(&__this->obj);
 		free(__this);
 	}
 	static refcount_ptr_elem Make(LogicCodeState* state, FunctionRuntime&& runtime)

@@ -5,6 +5,7 @@
 #include "LogicString.hpp"
 #include "LogicRefBitset.hpp"
 #include "bitsetdynamic.hpp"
+#include "LogicFunctionObject.hpp"
 namespace LogicCode::ObjectHelper
 {
 	ObjectView<std::nullptr_t> New();
@@ -21,7 +22,11 @@ namespace LogicCode::ObjectHelper
 	ObjectView<LogicRefBitset> NewRefBitset(const char* key, std::refcount_ptr<VariableData>& state);
 
 	ObjectView<LogicString> NewString(const char* val);
-	//static refcount_elem* New(FunctionData& val);
+	ObjectView<LogicFunctionObject> NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative& fnative);
+	ObjectView<LogicFunctionObject> NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative&& fnative);
+	ObjectView<LogicFunctionObject> NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime& fruntime);
+	ObjectView<LogicFunctionObject> NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime&& fruntime);
+
 	//static refcount_elem* NewUserData(size_t len);
 	//static refcount_elem* NewLightUserData(void* ptr);
 

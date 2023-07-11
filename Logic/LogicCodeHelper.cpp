@@ -255,12 +255,13 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 					if (type.resultType == Light::ResultType::Expression)
 					{
 						auto expression = type.expression;
-						auto getfn = statevd->GetFunction(currentopcode->data());
+						auto stack_obj = statevd->GetValue(currentopcode->data());
+						auto getfn1 = LogicFunctionObject::FromObject(stack_obj);
 
-						if (getfn->type != FunctionData::FunctionType::None)
+						if (getfn1 != NULL)
 						{
 
-
+							auto getfn = getfn1->data();
 							if (getfn->type == FunctionData::FunctionType::Runtime)
 							{
 								auto& parent = getfn->parentscope;
@@ -298,6 +299,8 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 							}
 							else if (getfn->type == FunctionData::FunctionType::Native)
 							{
+								auto getfn = getfn1->data();
+
 								auto expressionlen = expression->get_Count();
 								auto oldoffset = statestack.get_Offset();
 								statestack.set_Offset(statestack.size());
@@ -313,7 +316,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 										return 0;
 									}
 								}
-								auto lenret = getfn->get_nativefn().callback(getfn.get(), state);
+								auto lenret = getfn->get_nativefn().callback(getfn, state);
 								auto toremove = statestack.sizeoffset() - lenret;
 								for (size_t i = 0; i < toremove; i++)
 								{

@@ -1,4 +1,8 @@
-print(num 2.4,int 2);
+var select_index = int 0;
+const value = 23;
+demux(select_index,value,ref A,ref B);
+
+print("A: ",A,"B: ",B);
 truthtable (A,B)@{
 	return and(A,B);
 };
