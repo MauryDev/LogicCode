@@ -90,3 +90,13 @@ print(C);
 ```
 
 In this example, we declare the variables `A` and `B` with logical values. Then, we define the function `mylogic` that performs logical operations based on the parameters `a` and `b`. Finally, we call the `mylogic` function with the values `A` and `B` and print the result.
+
+
+Other Example: 
+```
+truthtable(fun(A,B) @{
+	return and(A,B);
+},int 2);
+// teste
+
+```
