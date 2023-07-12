@@ -39,36 +39,6 @@ struct FunctionData
 		parentscope = {};
 		type = FunctionType::None;
 	}
-	using refcount_elem = std::RefCount<FunctionData>;
-	using refcount_ptr_elem = std::refcount_ptr<FunctionData, FunctionData>;
-
-	static refcount_elem* New(LogicCodeState* state, FunctionNative&& native)
-	{
-		auto refcountlen = sizeof(refcount_elem) + sizeof(FunctionNative);
-		auto refcount = std::malloc_t<refcount_elem>(refcountlen);
-		memset(refcount, 0, refcountlen);
-
-		refcount->count = 0;
-		refcount->obj.type = FunctionType::Native;
-		refcount->obj.parentscope = state->scope;
-
-		refcount->obj.get_nativefn() = native;
-		return refcount;
-	}
-	static refcount_elem* New(LogicCodeState* state, FunctionRuntime&& runtime)
-	{
-		auto refcountlen = sizeof(refcount_elem) + sizeof(FunctionRuntime);
-
-		auto refcount = std::malloc_t<refcount_elem>(refcountlen);
-		memset(refcount, 0, refcountlen);
-
-		refcount->count = 0;
-		refcount->obj.type = FunctionType::Runtime;
-		refcount->obj.parentscope = state->scope;
-		memset(&refcount->obj.get_runtimefn(), 0, sizeof(FunctionRuntime));
-		refcount->obj.get_runtimefn() = runtime;
-		return refcount;
-	}
 	
 	static void Free(FunctionData* fdata)
 	{
@@ -77,19 +47,8 @@ struct FunctionData
 			fdata->get_runtimefn().argsname.~vector();
 		}
 	}
-	static void Free(refcount_elem* __this)
-	{
-		Free(&__this->obj);
-		free(__this);
-	}
-	static refcount_ptr_elem Make(LogicCodeState* state, FunctionRuntime&& runtime)
-	{
-		return refcount_ptr_elem::make<LogicCodeState*, FunctionRuntime&&>(state, std::forward<FunctionRuntime&&>(runtime));
-	}
-	static refcount_ptr_elem Make(LogicCodeState* state, FunctionNative&& native)
-	{
-		return refcount_ptr_elem::make<LogicCodeState*, FunctionNative&&>(state, std::forward<FunctionNative&&>(native));
-	}
+
+	
 };
 
 

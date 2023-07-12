@@ -18,7 +18,6 @@ struct VariableData
 	std::refcount_ptr<VariableData> parent;
 	std::unordered_map<std::string, LogicCode::Object::refcount_ptr_elem> vars;
 	std::unordered_map<std::string, LogicCode::Object::refcount_ptr_elem> consts;
-	std::unordered_map<std::string, std::refcount_ptr<FunctionData, FunctionData>> functions;
 	VariableData() {
 		parent = {};
 	}
@@ -124,10 +123,30 @@ struct VariableData
 	}
 	void SetVar(std::string& str, LogicCode::Object::refcount_ptr_elem& v, bool checkparent = true)
 	{
-		if (!Exists(str, checkparent) || GetTypeVariable(str, checkparent) == LogicCode::VarType::Var)
+		auto containsval = Exists(str, checkparent);
+		
+		if (containsval && GetTypeVariable(str,checkparent) == LogicCode::VarType::Var)
+		{
+			if (GetTypeVariable(str, checkparent) == LogicCode::VarType::Var)
+			{
+				auto invars = vars.find(str);
+				if (invars != vars.end())
+				{
+					invars->second = v;
+				}
+
+				if (checkparent && parent)
+				{
+					parent->SetVar(str, v, checkparent);
+				}
+				
+			}
+		}
+		else
 		{
 			vars[str] = v;
 		}
+		
 	}
 	void SetVar(std::string&& str, LogicCode::Object::refcount_ptr_elem&& v, bool checkparent = true)
 	{

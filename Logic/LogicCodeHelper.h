@@ -21,5 +21,7 @@ namespace LogicCode::Helper
 	int ExecuteInstruction(LogicCodeState* state,Light::Instruction& instruction);
 	int ExecuteInstuctionShared(LogicCodeState* state, Light::Instruction& instruction);
 
+	int CallFunction(LogicCodeState* state, int nargs);
+
 };
 

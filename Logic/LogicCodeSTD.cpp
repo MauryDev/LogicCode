@@ -388,7 +388,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 int LogicCode::Std::Fun(LogicCodeState* state, Light::List& current)
 {
 	auto instructionsize = current.get_Count();
-
+	// fun <label> <expression> <instruction>
 	if (instructionsize == 4)
 	{
 		auto fnname = current[1].str;
@@ -407,6 +407,25 @@ int LogicCode::Std::Fun(LogicCodeState* state, Light::List& current)
 		}
 
 		state->scope->SetVar(fnname->data(), fnobj.v);
+		return 0;
+	}
+	// fun <expression> <instruction>
+	else if (instructionsize == 3)
+	{
+		auto argsname = current[1].expression;
+		auto argscount = argsname->get_Count();
+
+		auto fnobj = ObjectHelper::NewFunctionRuntime(state, {});
+		auto& fruntime = fnobj->data()->get_runtimefn();
+
+		fruntime.body = current[2].instruction;
+
+		for (size_t i = 0; i < argscount; i++)
+		{
+			fruntime.argsname.push_back(argsname->at(i)[0].str->data());
+		}
+		state->stack.push(fnobj.v);
+		return 1;
 	}
 	return 0;
 }
@@ -499,6 +518,11 @@ void LogicCode::Std::_Print(Object::refcount_ptr_elem& obj)
 	{
 		auto result = obj->GetString();
 		std::cout.write(result->txt, result->size);
+	}
+	else if (obj->CheckType(ObjectType::Function))
+	{
+
+		std::cout << "Function: " << obj.get();
 	}
 }
 
@@ -1064,6 +1088,42 @@ int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* state)
 	return 0;
 }
 
+int LogicCode::Std::GetType(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto first = stack.get(0);
+		const char* v = "None";
+		switch (first->type)
+		{
+			case ObjectType::Bitset:
+				v = "Bitset";
+				break;
+			case ObjectType::String:
+				v = "String";
+				break;
+			case ObjectType::Number:
+				v = "Number";
+				break;
+			case ObjectType::RefBitset:
+				v = "RefBitset";
+				break;
+			case ObjectType::Integer:
+				v = "Integer";
+				break;
+			case ObjectType::Function:
+				v = "Function";
+				break;
+		}
+		stack.push(ObjectHelper::NewString(v));
+		return 1;
+	}
+	return 0;
+}
+
 int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 {
 	auto instructionsize = current.get_Count();
@@ -1130,6 +1190,31 @@ int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
 			__Inc(inputs);
 		}
 		
+	}
+	return 0;
+}
+
+int LogicCode::Std::TruthTable2(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 2)
+	{
+		auto argslen = stack.get(1);
+		auto obj =  stack.get(0);
+		if (obj && argslen)
+		{
+			auto fn = LogicFunctionObject::FromObject(obj);
+			auto lenargs = argslen->GetInteger();
+			if (fn != NULL)
+			{
+				auto v = ObjectHelper::NewInteger(2);
+				stack.push(v);
+				stack.push(obj);
+				Helper::CallFunction(state,1);
+			}
+		}
 	}
 	return 0;
 }
@@ -1203,6 +1288,8 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("sub", ObjectHelper::NewFunctionNative(state, { Sub }).v);
 	scope->SetVar("mul", ObjectHelper::NewFunctionNative(state, { Mul }).v);
 	scope->SetVar("div", ObjectHelper::NewFunctionNative(state, { Div }).v);
+	scope->SetVar("type", ObjectHelper::NewFunctionNative(state, { GetType }).v);
+	scope->SetVar("test", ObjectHelper::NewFunctionNative(state, { TruthTable2 }).v);
 
 }
 

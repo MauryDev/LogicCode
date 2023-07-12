@@ -426,3 +426,63 @@ int LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Ins
 	state->scope = oldscope;
 	return len;
 }
+
+int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs)
+{
+	auto& stack = state->stack;
+	auto fn = stack.top();
+	int retlen = 0;
+	auto idxstart = stack.sizeoffset() - nargs - 1;
+	if (fn)
+	{
+		auto fnobj = LogicFunctionObject::FromObject(fn);
+		stack.pop();
+		if (fnobj != NULL)
+		{
+			auto fndata = fnobj->data();
+			auto oldoffset = stack.get_Offset();
+			stack.set_Offset(stack.size() - nargs);
+			
+			if (fndata->type == FunctionData::FunctionType::Native)
+			{
+				auto& fnative = fndata->get_nativefn();
+				retlen = fnative.callback(fndata, state);
+			}
+			else if (fndata->type == FunctionData::FunctionType::Runtime)
+			{
+
+				auto& parent = fndata->parentscope;
+
+				auto& oldscope = state->scope;
+
+				auto newscope = std::refcount_ptr<VariableData>::make();
+
+				newscope->parent = parent;
+
+				state->scope = newscope;
+
+				auto& fruntime = fndata->get_runtimefn();
+				auto& runtimeargs = fruntime.argsname;
+				auto runtimeargslen = runtimeargs.size();
+				for (size_t i = 0; i < runtimeargslen; i++)
+				{
+					newscope->SetConst(runtimeargs.at(i), stack.get(i));
+				}
+				retlen = ExecuteInstruction(state, *fruntime.body);
+
+				state->scope = oldscope;
+
+				state->ret = false;
+			}
+			
+			stack.set_Offset(oldoffset);
+
+		}
+		
+	}
+	for (int i = 0; i < nargs; i++)
+	{
+		state->stack.remove(idxstart + i);
+	}
+	return retlen;
+}

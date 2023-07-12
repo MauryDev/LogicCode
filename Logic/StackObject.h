@@ -20,6 +20,10 @@ public:
 	{
 		offset = 0;
 	}
+	size_t absidx(int idx)
+	{
+		return idx >= 0 ? idx + offset : size() - abs(idx);
+	}
 	template<typename T>
 	void push(LogicCode::ObjectView<T>& v)
 	{
