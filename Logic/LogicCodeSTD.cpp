@@ -257,7 +257,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 	if (instructionsize == 3)
 	{
 
-		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+		auto arg1 = Helper::ToObjectFromCommand(state, current[1]);
 		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
@@ -287,7 +287,7 @@ int LogicCode::Std::If(LogicCodeState* state, Light::List& current)
 	{
 
 
-		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+		auto arg1 = Helper::ToObjectFromCommand(state, current[1]);
 		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
@@ -339,7 +339,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 
 	if (instructionsize == 3)
 	{
-		auto arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+		auto arg1 = Helper::ToObjectFromCommand(state, current[1]);
 		auto arg1bitset = arg1->GetBitset();
 		if (!state->CanRun())
 		{
@@ -367,7 +367,7 @@ int LogicCode::Std::While(LogicCodeState* state, Light::List& current)
 			{
 				return len;
 			}
-			arg1 = Helper::ToBitSetFromCommand(state, current[1]);
+			arg1 = Helper::ToObjectFromCommand(state, current[1]);
 			arg1bitset = arg1->GetBitset();
 			if (!arg1|| arg1bitset->size() == 0)
 			{
@@ -602,7 +602,7 @@ int LogicCode::Std::Case(LogicCodeState* state, Light::List& current)
 
 	if (instructionsize == 3)
 	{
-		auto bits = Helper::ToBitSetFromCommand(state, current[1]);
+		auto bits = Helper::ToObjectFromCommand(state, current[1]);
 		auto bits_ = bits->GetBitset();
 		if (!state->CanRun())
 		{
@@ -1124,77 +1124,8 @@ int LogicCode::Std::GetType(FunctionData* __this, LogicCodeState* state)
 	return 0;
 }
 
-int LogicCode::Std::TruthTable(LogicCodeState* state, Light::List& current)
-{
-	auto instructionsize = current.get_Count();
-	if (instructionsize == 3)
-	{
-		auto expression = current.at(1).expression;
-		auto instruction = current.at(2).instruction;
-		auto expressionlen = expression->get_Count();
-		auto looplen = expressionlen * 2;
-		std::vector<std::string> argsname;
-		auto inputs = std::bitsetdynamic::Make((size_t)expressionlen);
-		auto totalWidth = 7;
-		for (size_t i = 0; i < expressionlen; i++)
-		{
-			auto str = expression->at(i).at(0).str;
-			auto str_size = str->size();
-			argsname.push_back(str->data());
-			if (str_size + 1 > totalWidth)
-			{
-				totalWidth = str_size + 1;
-			}
-		}
-		
 
-		bool first = true;
-		for (auto& element : argsname)
-		{
-			std::cout << std::setw(totalWidth) << std::left << element;
-
-		}
-		std::cout << "| ";
-		std::cout << std::setw(totalWidth) << std::left << "result";
-		std::cout << std::endl;
-		for (size_t i = 0; i < looplen; i++)
-		{
-			auto oldoffset = state->stack.get_Offset();
-			state->stack.set_Offset(oldoffset);
-
-			auto oldscope = state->scope;
-
-			auto newscope = std::refcount_ptr<VariableData>::make();
-			newscope->parent = oldscope;
-			state->scope = newscope;
-
-			for (size_t i2 = 0; i2 < expressionlen; i2++)
-			{
-				auto currentv = inputs->get(i2);
-				std::cout << std::setw(totalWidth) << std::left << currentv;
-				auto v_bitset = ObjectHelper::NewBitset(currentv);
-				newscope->SetConst(argsname.at(i2), v_bitset.v,false);
-			}
-			Helper::ExecuteInstruction(state, *instruction);
-
-			state->scope = oldscope;
-
-			state->ret = false;
-			state->stack.set_Offset(oldoffset);
-
-			auto returnv = Helper::ToBitSet(state)->get(0);
-
-
-			std::cout << "| " << std::setw(totalWidth) << std::left << returnv << std::endl;
-
-			__Inc(inputs);
-		}
-		
-	}
-	return 0;
-}
-
-int LogicCode::Std::TruthTable2(FunctionData* __this, LogicCodeState* state)
+int LogicCode::Std::TruthTable(FunctionData* __this, LogicCodeState* state)
 {
 	auto& stack = state->stack;
 	auto& scope = state->scope;
@@ -1209,10 +1140,51 @@ int LogicCode::Std::TruthTable2(FunctionData* __this, LogicCodeState* state)
 			auto lenargs = argslen->GetInteger();
 			if (fn != NULL)
 			{
-				auto v = ObjectHelper::NewInteger(2);
-				stack.push(v);
-				stack.push(obj);
-				Helper::CallFunction(state,1);
+				auto looplen = lenargs * 2;
+				auto inputs = std::bitsetdynamic::Make((size_t)lenargs);
+
+				
+
+				for (size_t i = 0; i < looplen; i++)
+				{
+					for (size_t i2 = 0; i2 < lenargs; i2++)
+					{
+						auto currentv = inputs->get(i2);
+						auto bset = ObjectHelper::NewBitset(currentv);
+						stack.push(bset);
+					}
+
+					stack.push(obj);
+					Helper::CallFunction(state, lenargs,0);
+
+
+
+					__Inc(inputs);
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::function_isNative(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto fn = stack.get(0);
+		if (fn)
+		{
+			auto fnobj= LogicFunctionObject::FromObject(fn);
+
+			if (fnobj != NULL)
+			{
+				auto fndata = fnobj->data();
+				auto isnative = fndata->type == FunctionData::FunctionType::Native;
+				stack.push(ObjectHelper::NewBitset(isnative));
+				return 1;
 			}
 		}
 	}
@@ -1237,29 +1209,7 @@ void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 	}
 }
 
-int8_t LogicCode::Std::__Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
-{
-	auto sizev = v->size();
-	auto len = sizev < 8 ? 0 : sizev - 8;
-	int8_t value = 0;
 
-	for (size_t i = 0; i < sizev; i++)
-	{
-		value <<= 1;
-		value |= (int8_t)v->get(sizev - i - 1);
-	}
-	return value;
-}
-
-bool LogicCode::Std::__ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v)
-{
-	auto size = v->size();
-	if (size > 0)
-	{
-		return v->get(0);
-	}
-	return false;
-}
 
 
 
@@ -1270,8 +1220,6 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("and", ObjectHelper::NewFunctionNative(state, { And }).v);
 	scope->SetVar("or", ObjectHelper::NewFunctionNative(state, { Or }).v);
 	scope->SetVar("not", ObjectHelper::NewFunctionNative(state, { Not }).v);
-
-	
 	scope->SetVar("xor", ObjectHelper::NewFunctionNative(state, { Xor }).v);
 	scope->SetVar("nand", ObjectHelper::NewFunctionNative(state, { Nand }).v);
 	scope->SetVar("nor", ObjectHelper::NewFunctionNative(state, { Nor }).v);
@@ -1289,7 +1237,10 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("mul", ObjectHelper::NewFunctionNative(state, { Mul }).v);
 	scope->SetVar("div", ObjectHelper::NewFunctionNative(state, { Div }).v);
 	scope->SetVar("type", ObjectHelper::NewFunctionNative(state, { GetType }).v);
-	scope->SetVar("test", ObjectHelper::NewFunctionNative(state, { TruthTable2 }).v);
+	scope->SetVar("truthtable", ObjectHelper::NewFunctionNative(state, { TruthTable }).v);
+
+	// function api
+	scope->SetVar("function.isNative", ObjectHelper::NewFunctionNative(state, { function_isNative }).v);
 
 }
 

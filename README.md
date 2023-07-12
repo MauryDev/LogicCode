@@ -94,9 +94,8 @@ In this example, we declare the variables `A` and `B` with logical values. Then,
 
 Other Example: 
 ```
-truthtable(fun(A,B) @{
-	return and(A,B);
+truthtable(fun (a,b) @{
+	print("A:",a,"B:",b,"Result:", and(a,b));
 },int 2);
-// teste
 
 ```

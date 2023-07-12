@@ -4,7 +4,7 @@
 #include <memory>
 #include "LogicObjectHelper.hpp"
 #include "LogicFunctionData.hpp"
-LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToBitSetFromCommand(LogicCodeState* state, Light::CommandResult& command)
+LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToObjectFromCommand(LogicCodeState* state, Light::CommandResult& command)
 {
 
 	if (!state->CanRun())
@@ -218,10 +218,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 			{
 				return Std::Ref(state, current);
 			}
-			else if (currentopcode->Equals("truthtable"))
-			{
-				return Std::TruthTable(state, current);
-			}
+			
 			else
 			{
 				if (instructionsize >= 3)
@@ -256,77 +253,81 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 					{
 						auto expression = type.expression;
 						auto stack_obj = statevd->GetValue(currentopcode->data());
-						auto getfn1 = LogicFunctionObject::FromObject(stack_obj);
-
-						if (getfn1 != NULL)
+						if (stack_obj)
 						{
+							auto getfn1 = LogicFunctionObject::FromObject(stack_obj);
 
-							auto getfn = getfn1->data();
-							if (getfn->type == FunctionData::FunctionType::Runtime)
+							if (getfn1 != NULL)
 							{
-								auto& parent = getfn->parentscope;
 
-								auto oldscope = state->scope;
-
-								auto newscope = std::refcount_ptr<VariableData>::make();
-								newscope->parent = parent;
-
-								auto& args = getfn->get_runtimefn().argsname;
-								auto expressionlen = args.size();
-
-								for (size_t i = 0; i < expressionlen; i++)
-								{
-									auto arg = ToBitSetFromList(state, expression->at(i));
-									if (!state->CanRun())
-									{
-
-										if (!state->IsError())
-										{
-											state->error = "Don't use return in expression";
-										}
-										return 0;
-									}
-									newscope->SetConst(args[i], arg, false);
-								}
-								state->scope = newscope;
-
-								auto len = ExecuteInstruction(state, *getfn->get_runtimefn().body);
-
-								state->scope = oldscope;
-
-								state->ret = false;
-								return len;
-							}
-							else if (getfn->type == FunctionData::FunctionType::Native)
-							{
 								auto getfn = getfn1->data();
-
-								auto expressionlen = expression->get_Count();
-								auto oldoffset = statestack.get_Offset();
-								statestack.set_Offset(statestack.size());
-								for (size_t i = 0; i < expressionlen; i++)
+								if (getfn->type == FunctionData::FunctionType::Runtime)
 								{
-									PushList(state, expression->at(i));
-									if (!state->CanRun())
+									auto& parent = getfn->parentscope;
+
+									auto oldscope = state->scope;
+
+									auto newscope = std::refcount_ptr<VariableData>::make();
+									newscope->parent = parent;
+
+									auto& args = getfn->get_runtimefn().argsname;
+									auto expressionlen = args.size();
+
+									for (size_t i = 0; i < expressionlen; i++)
 									{
-										if (!state->IsError())
+										auto arg = ToBitSetFromList(state, expression->at(i));
+										if (!state->CanRun())
 										{
-											state->error = "Don't use return in expression";
-										}
-										return 0;
-									}
-								}
-								auto lenret = getfn->get_nativefn().callback(getfn, state);
-								auto toremove = statestack.sizeoffset() - lenret;
-								for (size_t i = 0; i < toremove; i++)
-								{
-									state->stack.remove(0);
-								}
-								statestack.set_Offset(oldoffset);
 
-								return lenret;
+											if (!state->IsError())
+											{
+												state->error = "Don't use return in expression";
+											}
+											return 0;
+										}
+										newscope->SetConst(args[i], arg, false);
+									}
+									state->scope = newscope;
+
+									auto len = ExecuteInstruction(state, *getfn->get_runtimefn().body);
+
+									state->scope = oldscope;
+
+									state->ret = false;
+									return len;
+								}
+								else if (getfn->type == FunctionData::FunctionType::Native)
+								{
+									auto getfn = getfn1->data();
+
+									auto expressionlen = expression->get_Count();
+									auto oldoffset = statestack.get_Offset();
+									statestack.set_Offset(statestack.size());
+									for (size_t i = 0; i < expressionlen; i++)
+									{
+										PushList(state, expression->at(i));
+										if (!state->CanRun())
+										{
+											if (!state->IsError())
+											{
+												state->error = "Don't use return in expression";
+											}
+											return 0;
+										}
+									}
+									auto lenret = getfn->get_nativefn().callback(getfn, state);
+									auto toremove = statestack.sizeoffset() - lenret;
+									for (size_t i = 0; i < toremove; i++)
+									{
+										state->stack.remove(0);
+									}
+									statestack.set_Offset(oldoffset);
+
+									return lenret;
+								}
 							}
 						}
+						
 					}
 				}
 			}
@@ -427,11 +428,11 @@ int LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Ins
 	return len;
 }
 
-int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs)
+int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs, int retlen)
 {
 	auto& stack = state->stack;
 	auto fn = stack.top();
-	int retlen = 0;
+	int retleninstack = 0;
 	auto idxstart = stack.sizeoffset() - nargs - 1;
 	if (fn)
 	{
@@ -446,7 +447,7 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs)
 			if (fndata->type == FunctionData::FunctionType::Native)
 			{
 				auto& fnative = fndata->get_nativefn();
-				retlen = fnative.callback(fndata, state);
+				retleninstack = fnative.callback(fndata, state);
 			}
 			else if (fndata->type == FunctionData::FunctionType::Runtime)
 			{
@@ -468,7 +469,7 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs)
 				{
 					newscope->SetConst(runtimeargs.at(i), stack.get(i));
 				}
-				retlen = ExecuteInstruction(state, *fruntime.body);
+				retleninstack = ExecuteInstruction(state, *fruntime.body);
 
 				state->scope = oldscope;
 
@@ -482,7 +483,22 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs)
 	}
 	for (int i = 0; i < nargs; i++)
 	{
-		state->stack.remove(idxstart + i);
+		state->stack.remove(idxstart );
 	}
-	return retlen;
+	if (retlen != -1)
+	{
+		
+		auto toremove = retlen >= retleninstack ? 0 : retleninstack - retlen;
+		for (size_t i = 0; i < toremove; i++)
+		{
+			stack.pop();
+		}
+		return  retlen >= retleninstack ? retleninstack : retlen;
+
+	}
+	else
+	{
+		return retleninstack;
+	}
+	
 }

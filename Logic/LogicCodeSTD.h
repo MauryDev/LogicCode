@@ -39,15 +39,13 @@ namespace LogicCode::Std
 	int Sub(FunctionData* __this, LogicCodeState* state);
 	int Mul(FunctionData* __this, LogicCodeState* state);
 	int Div(FunctionData* __this, LogicCodeState* state);
-
 	int GetType(FunctionData* __this, LogicCodeState* state);
+	int TruthTable(FunctionData* __this, LogicCodeState* state);
 
-	int TruthTable(LogicCodeState* state, Light::List& current);
-	int TruthTable2(FunctionData* __this, LogicCodeState* state);
+	int function_isNative(FunctionData* __this, LogicCodeState* state);
+
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
-	int8_t __Toi8(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
-	bool __ToBool(std::refcount_ptr<std::bitsetdynamic, std::bitsetdynamic>& v);
 
 	void __Init(LogicCodeState* state);
 	int _Error(LogicCodeState* state,const char* v);

@@ -1,0 +1,6 @@
+refbiset.get(refbitset) -> object
+refbiset.set(refbiset, val) -> none
+function.isNative(function) -> bitset
+function.isRuntime(function) -> bitset
+function.argslen(function) -> Integer
+function.getargname(function, idx) -> String

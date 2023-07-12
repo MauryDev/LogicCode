@@ -8,7 +8,7 @@
 namespace LogicCode::Helper
 {
 	
-	LogicCode::Object::refcount_ptr_elem ToBitSetFromCommand(LogicCodeState* state,Light::CommandResult& command);
+	LogicCode::Object::refcount_ptr_elem ToObjectFromCommand(LogicCodeState* state,Light::CommandResult& command);
 	int PushCommand(LogicCodeState* state, Light::CommandResult& command);
 
 	LogicCode::Object::refcount_ptr_elem ToBitSetFromList(LogicCodeState* state,Light::List& current);
@@ -21,7 +21,7 @@ namespace LogicCode::Helper
 	int ExecuteInstruction(LogicCodeState* state,Light::Instruction& instruction);
 	int ExecuteInstuctionShared(LogicCodeState* state, Light::Instruction& instruction);
 
-	int CallFunction(LogicCodeState* state, int nargs);
+	int CallFunction(LogicCodeState* state, int nargs,int retlen = -1);
 
 };
 

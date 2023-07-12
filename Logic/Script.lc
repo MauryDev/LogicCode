@@ -1,5 +1,7 @@
-test(print,int 1);
-truthtable (A,B)@{
-	return and(A,B);
-};
-// teste
+truthtable(fun (a,b) @{
+	print("A:",a,"B:",b,"Result:", and(a,b));
+},int 2);
+
+var f = function.isNative(print);
+
+print(f);
