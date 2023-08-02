@@ -43,7 +43,41 @@ namespace LogicCode::Std
 	int TruthTable(FunctionData* __this, LogicCodeState* state);
 
 	int function_isNative(FunctionData* __this, LogicCodeState* state);
+	int function_isRuntime(FunctionData* __this, LogicCodeState* state);
+	int function_argslen(FunctionData* __this, LogicCodeState* state);
+	int function_getargname(FunctionData* __this, LogicCodeState* state);
 
+	int refbitset_get(FunctionData* __this, LogicCodeState* state);
+	int refbitset_set(FunctionData* __this, LogicCodeState* state);
+
+	int integer_Abs(FunctionData* __this, LogicCodeState* state);
+	int integer_Equals(FunctionData* __this, LogicCodeState* state);
+	int integer_Clamp(FunctionData* __this, LogicCodeState* state);
+	int integer_IsNegative(FunctionData* __this, LogicCodeState* state);
+	int integer_IsPositive(FunctionData* __this, LogicCodeState* state);
+	int integer_Max(FunctionData* __this, LogicCodeState* state);
+	int integer_Min(FunctionData* __this, LogicCodeState* state);
+	int integer_Parse(FunctionData* __this, LogicCodeState* state);
+	int integer_Sign(FunctionData* __this, LogicCodeState* state);
+	int integer_ToString(FunctionData* __this, LogicCodeState* state);
+
+	int number_Abs(FunctionData* __this, LogicCodeState* state);
+	int number_Clamp(FunctionData* __this, LogicCodeState* state);
+	int number_Equals(FunctionData* __this, LogicCodeState* state);
+	int number_IsFinite(FunctionData* __this, LogicCodeState* state);
+	int number_IsInfinity(FunctionData* __this, LogicCodeState* state);
+	int number_IsNaN(FunctionData* __this, LogicCodeState* state);
+	int number_IsNegative(FunctionData* __this, LogicCodeState* state);
+	int number_IsNegativeInfinity(FunctionData* __this, LogicCodeState* state);
+	int number_IsPositive(FunctionData* __this, LogicCodeState* state);
+	int number_IsPositiveInfinity(FunctionData* __this, LogicCodeState* state);
+	int number_Max(FunctionData* __this, LogicCodeState* state);
+	int number_Min(FunctionData* __this, LogicCodeState* state);
+	int number_Parse(FunctionData* __this, LogicCodeState* state);
+	int number_ToString(FunctionData* __this, LogicCodeState* state);
+
+	int string_byte(FunctionData* __this, LogicCodeState* state);
+	int string_char(FunctionData* __this, LogicCodeState* state);
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
 

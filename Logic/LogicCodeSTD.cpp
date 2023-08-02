@@ -1191,6 +1191,788 @@ int LogicCode::Std::function_isNative(FunctionData* __this, LogicCodeState* stat
 	return 0;
 }
 
+int LogicCode::Std::function_isRuntime(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto fn = stack.get(0);
+		if (fn)
+		{
+			auto fnobj = LogicFunctionObject::FromObject(fn);
+
+			if (fnobj != NULL)
+			{
+				auto fndata = fnobj->data();
+				auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
+				stack.push(ObjectHelper::NewBitset(isruntime));
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::function_argslen(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto fn = stack.get(0);
+		if (fn)
+		{
+			auto fnobj = LogicFunctionObject::FromObject(fn);
+
+			if (fnobj != NULL)
+			{
+				auto fndata = fnobj->data();
+				auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
+				if (isruntime)
+				{
+					auto& fnruntime = fndata->get_runtimefn();
+					stack.push(ObjectHelper::NewInteger(fnruntime.argsname.size()));
+				}
+				else
+				{
+					stack.push(ObjectHelper::NewInteger(0));
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::function_getargname(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 2)
+	{
+		auto fn = stack.get(0);
+		auto idx = stack.get(1);
+		if (fn && idx)
+		{
+			auto fnobj = LogicFunctionObject::FromObject(fn);
+			auto idx_n = idx->GetInteger();
+			if (fnobj != NULL)
+			{
+				auto fndata = fnobj->data();
+				auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
+				if (isruntime)
+				{
+					auto& fnruntime = fndata->get_runtimefn();
+					auto& argsname = fnruntime.argsname;
+					if (idx_n >= 0 && idx_n < argsname.size())
+					{
+						auto& str = fnruntime.argsname.at(idx_n);
+						stack.push(ObjectHelper::NewString(str.c_str()));
+					}
+					else
+					{
+						stack.push(ObjectHelper::NewString(""));
+					}
+					
+				}
+				else
+				{
+					stack.push(ObjectHelper::NewString(""));
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::refbitset_get(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto refbit = stack.get(0);
+		if (refbit)
+		{
+			auto refbitobj = LogicRefBitset::FromObject(refbit);
+
+			if (refbitobj != NULL)
+			{
+				stack.push(refbitobj->GetValue());
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::refbitset_set(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 2)
+	{
+		auto refbit = stack.get(0);
+		auto value = stack.get(1);
+
+		if (refbit)
+		{
+			auto refbitobj = LogicRefBitset::FromObject(refbit);
+
+			if (refbitobj != NULL)
+			{
+				refbitobj->SetValue(value);
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Abs(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto numv = stack.get(0);
+		if (numv)
+		{
+			auto num = numv->GetInteger();
+
+			stack.push(ObjectHelper::NewInteger(abs(num)));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Equals(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 2)
+	{
+		auto& numv1 = stack.get(0);
+		auto& numv2 = stack.get(1);
+
+		if (numv1 && numv2)
+		{
+			auto num1 = numv1->GetInteger();
+			auto num2 = numv2->GetInteger();
+
+			stack.push(ObjectHelper::NewBitset(num1 == num2));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Clamp(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 3)
+	{
+		auto& numv1 = stack.get(0);
+		auto& numv2 = stack.get(1);
+		auto& numv3 = stack.get(2);
+
+		if (numv1 && numv2 && numv3)
+		{
+			auto v = numv1->GetInteger();
+			auto lo = numv2->GetInteger();
+			auto hi = numv3->GetInteger();
+
+			auto vret = v > hi ? hi : (v < lo ? lo :v);
+			stack.push(ObjectHelper::NewInteger(vret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_IsNegative(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto numv = stack.get(0);
+		if (numv)
+		{
+			auto num = numv->GetInteger();
+
+			stack.push(ObjectHelper::NewBitset(num < 0));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_IsPositive(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto numv = stack.get(0);
+		if (numv)
+		{
+			auto num = numv->GetInteger();
+
+			stack.push(ObjectHelper::NewBitset(num > 0));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Max(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		bool first = true;
+		LogicInteger num = 0;
+		for (size_t i = 0; i < len; i++)
+		{
+			auto& numv = stack.get(i);
+
+			if (numv)
+			{
+				auto currentv = numv->GetInteger();
+				if (first)
+				{
+					num = currentv;
+
+					first = false;
+				}
+				else
+				{
+					num = currentv > num ? currentv : num;
+
+				}
+			}
+			
+		}
+
+		stack.push(ObjectHelper::NewInteger(num));
+		return 1;
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Min(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		bool first = true;
+		LogicInteger num = 0;
+		for (size_t i = 0; i < len; i++)
+		{
+			auto& numv = stack.get(i);
+
+			if (numv)
+			{
+				auto currentv = numv->GetInteger();
+				if (first)
+				{
+					num = currentv;
+
+					first = false;
+				}
+				else
+				{
+					num = currentv < num ? currentv : num;
+
+				}
+			}
+
+		}
+
+		stack.push(ObjectHelper::NewInteger(num));
+		return 1;
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Parse(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& strv = stack.get(0);
+		if (strv)
+		{
+			auto str = strv->GetString();
+			if (str != NULL)
+			{
+				auto val = atoll(str->txt);
+				stack.push(ObjectHelper::NewInteger(val));
+				return 1;
+			}
+			
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_Sign(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv = stack.get(0);
+		if (numv)
+		{
+			auto num = numv->GetInteger();
+			auto ret = num == 0 ? 0 : (num < 0 ? -1 : 1);
+
+			stack.push(ObjectHelper::NewInteger(ret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::integer_ToString(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv = stack.get(0);
+		if (numv)
+		{
+			char str[30] = {};
+			auto num = numv->GetInteger();
+			_i64toa_s(num, str, 30, 10);
+			
+			stack.push(ObjectHelper::NewString(str));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Abs(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv = stack.get(0);
+		if (numv)
+		{
+			auto num = numv->GetNumber();
+			auto newret = fabs(num);
+
+			stack.push(ObjectHelper::NewNumber(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Clamp(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 3)
+	{
+		auto& numv1 = stack.get(0);
+		auto& numv2 = stack.get(1);
+		auto& numv3 = stack.get(2);
+
+		if (numv1 && numv2 && numv3)
+		{
+			auto num = numv1->GetNumber();
+			auto minnum = numv2->GetNumber();
+			auto maxnum = numv3->GetNumber();
+
+			auto newret = num > maxnum ? maxnum : num < minnum ? minnum : num;
+
+			stack.push(ObjectHelper::NewNumber(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Equals(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 2)
+	{
+		auto& numv1 = stack.get(0);
+		auto& numv2 = stack.get(1);
+
+		if (numv1 && numv2)
+		{
+			auto v1 = numv1->GetNumber();
+			auto v2 = numv2->GetNumber();
+
+			auto newret = v1 == v2;
+
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsFinite(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = std::isfinite(v1);
+
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsInfinity(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = std::isinf(v1);
+
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsNaN(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = std::isnan(v1);
+
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsNegative(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsNegativeInfinity(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = v1 == -std::numeric_limits<double>::infinity();
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsPositive(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
+			stack.push(ObjectHelper::NewBitset(!newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_IsPositiveInfinity(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = v1 == std::numeric_limits<double>::infinity();
+			stack.push(ObjectHelper::NewBitset(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Max(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = v1;
+
+			for (size_t i = 1; i < len; i++)
+			{
+				auto& numcurrent = stack.get(i);
+
+				if (numcurrent)
+				{
+					auto vcurrent = numcurrent->GetNumber();
+					newret = vcurrent > newret ? vcurrent : newret;
+				}
+			}
+
+			stack.push(ObjectHelper::NewNumber(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Min(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			auto newret = v1;
+
+			for (size_t i = 1; i < len; i++)
+			{
+				auto& numcurrent = stack.get(i);
+
+				if (numcurrent)
+				{
+					auto vcurrent = numcurrent->GetNumber();
+					newret = vcurrent < newret ? vcurrent : newret;
+				}
+			}
+
+			stack.push(ObjectHelper::NewNumber(newret));
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_Parse(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetString();
+			if (v1 != NULL)
+			{
+				auto newret = std::atof(v1->txt);
+				stack.push(ObjectHelper::NewNumber(newret));
+				return 1;
+			}
+			
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::number_ToString(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len == 1)
+	{
+		auto& numv1 = stack.get(0);
+
+		if (numv1)
+		{
+			auto v1 = numv1->GetNumber();
+			char str[20] = {};
+			sprintf_s(&str[0], 20, "%f", v1);
+			stack.push(ObjectHelper::NewString(str));
+			return 1;
+
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::string_byte(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto v1 = arg1->GetString();
+			LogicInteger idx = 0;
+			if (len >= 2)
+			{
+				auto& arg2 = stack.get(1);
+				idx = arg2 ? arg2->GetInteger() : 0;
+			}
+			if (v1 != NULL)
+			{
+				if (idx < 0 || idx > v1->size)
+				{
+					stack.push(ObjectHelper::New());
+				}
+				else
+				{
+					stack.push(ObjectHelper::NewInteger(v1->txt[idx]));
+				}
+				return 1;
+			}
+
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::string_char(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto v1 = arg1->GetString();
+			LogicInteger idx = 0;
+			if (len >= 2)
+			{
+				auto& arg2 = stack.get(1);
+				idx = arg2 ? arg2->GetInteger() : 0;
+			}
+			if (v1 != NULL)
+			{
+				if (idx < 0 || idx > v1->size)
+				{
+					stack.push(ObjectHelper::New());
+				}
+				else
+				{
+					const char current[2] = { v1->txt[idx],'\0'};
+					stack.push(ObjectHelper::NewString(current));
+				}
+				return 1;
+			}
+
+		}
+	}
+	return 0;
+}
+
 void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 {
 	auto size = v->size();
@@ -1240,7 +2022,56 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("truthtable", ObjectHelper::NewFunctionNative(state, { TruthTable }).v);
 
 	// function api
-	scope->SetVar("function.isNative", ObjectHelper::NewFunctionNative(state, { function_isNative }).v);
+	scope->SetVar("function.isnative", ObjectHelper::NewFunctionNative(state, { function_isNative }).v);
+	scope->SetVar("function.isRuntime", ObjectHelper::NewFunctionNative(state, { function_isRuntime }).v);
+	scope->SetVar("function.argslen", ObjectHelper::NewFunctionNative(state, { function_argslen }).v);
+	scope->SetVar("function.getargname", ObjectHelper::NewFunctionNative(state, { function_getargname }).v);
+
+	// refbitset
+	scope->SetVar("refbitset.get", ObjectHelper::NewFunctionNative(state, { refbitset_get }).v);
+	scope->SetVar("refbitset.set", ObjectHelper::NewFunctionNative(state, { refbitset_set }).v);
+
+	// Integer
+	scope->SetVar("integer.maxvalue", ObjectHelper::NewInteger(INT64_MAX).v);
+	scope->SetVar("integer.minvalue", ObjectHelper::NewInteger(INT64_MIN).v);
+	scope->SetVar("integer.abs", ObjectHelper::NewFunctionNative(state, { integer_Abs }).v);
+	scope->SetVar("integer.equals", ObjectHelper::NewFunctionNative(state, { integer_Equals }).v);
+	scope->SetVar("integer.clamp", ObjectHelper::NewFunctionNative(state, { integer_Clamp }).v);
+	scope->SetVar("integer.tostring", ObjectHelper::NewFunctionNative(state, { integer_ToString }).v);
+	scope->SetVar("integer.sign", ObjectHelper::NewFunctionNative(state, { integer_Sign }).v);
+	scope->SetVar("integer.parse", ObjectHelper::NewFunctionNative(state, { integer_Parse }).v);
+	scope->SetVar("integer.max", ObjectHelper::NewFunctionNative(state, { integer_Max }).v);
+	scope->SetVar("integer.min", ObjectHelper::NewFunctionNative(state, { integer_Min }).v);
+	scope->SetVar("integer.isnegative", ObjectHelper::NewFunctionNative(state, { integer_IsNegative }).v);
+	scope->SetVar("integer.ispositive", ObjectHelper::NewFunctionNative(state, { integer_IsPositive }).v);
+
+	// number
+	scope->SetVar("number.maxvalue", ObjectHelper::NewNumber(DBL_MAX).v);
+	scope->SetVar("number.minvalue", ObjectHelper::NewNumber(DBL_MIN).v);
+	scope->SetVar("number.nan", ObjectHelper::NewNumber(std::numeric_limits<double>::quiet_NaN()).v);
+	scope->SetVar("number.negativeinfinity", ObjectHelper::NewNumber(-std::numeric_limits<double>::infinity() ).v);
+	scope->SetVar("number.positiveinfinity", ObjectHelper::NewNumber(std::numeric_limits<double>::infinity()).v);
+	scope->SetVar("number.negativezero", ObjectHelper::NewNumber(-0.0).v);
+	scope->SetVar("number.PI", ObjectHelper::NewNumber(3.14159265358979323846).v);
+	scope->SetVar("number.abs", ObjectHelper::NewFunctionNative(state, { number_Abs }).v);
+	scope->SetVar("number.clamp", ObjectHelper::NewFunctionNative(state, { number_Clamp }).v);
+	scope->SetVar("number.equals", ObjectHelper::NewFunctionNative(state, { number_Equals }).v);
+	scope->SetVar("number.isfinite", ObjectHelper::NewFunctionNative(state, { number_IsFinite }).v);
+	scope->SetVar("number.isinfinity", ObjectHelper::NewFunctionNative(state, { number_IsInfinity }).v);
+	scope->SetVar("number.isnan", ObjectHelper::NewFunctionNative(state, { number_IsNaN }).v);
+	scope->SetVar("number.isnegative", ObjectHelper::NewFunctionNative(state, { number_IsNegative }).v);
+	scope->SetVar("number.isnegativeinfinity", ObjectHelper::NewFunctionNative(state, { number_IsNegativeInfinity }).v);
+	scope->SetVar("number.ispositive", ObjectHelper::NewFunctionNative(state, { number_IsPositive }).v);
+	scope->SetVar("number.ispositiveinfinity", ObjectHelper::NewFunctionNative(state, { number_IsPositiveInfinity }).v);
+	scope->SetVar("number.max", ObjectHelper::NewFunctionNative(state, { number_Max }).v);
+	scope->SetVar("number.min", ObjectHelper::NewFunctionNative(state, { number_Min }).v);
+	scope->SetVar("number.parse", ObjectHelper::NewFunctionNative(state, { number_Parse }).v);
+	scope->SetVar("number.tostring", ObjectHelper::NewFunctionNative(state, { number_ToString }).v);
+
+	// string
+
+	scope->SetVar("string.byte", ObjectHelper::NewFunctionNative(state, { string_byte }).v);
+	scope->SetVar("string.char", ObjectHelper::NewFunctionNative(state, { string_char }).v);
 
 }
 
