@@ -79,6 +79,21 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 
 }
 
+LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewStringLen(size_t bufferlen)
+{
+	size_t size = bufferlen;
+
+
+	ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size + 1 + sizeof(LogicString)) };
+	variable.v->type = ObjectType::String;
+
+	auto& str = variable.v->data<LogicString>();
+	str.size = size;
+	memset((void*)str.txt, 0, size + 1);
+
+	return variable;
+}
+
 LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative& fnative)
 {
 	auto len = LogicFunctionObject::GetMemorySize(FunctionData::FunctionType::Native);

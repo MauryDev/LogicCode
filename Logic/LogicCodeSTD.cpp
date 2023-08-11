@@ -1973,6 +1973,134 @@ int LogicCode::Std::string_char(FunctionData* __this, LogicCodeState* state)
 	return 0;
 }
 
+int LogicCode::Std::string_len(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto str = arg1->GetString();
+			size_t len = 0;
+			if (str != NULL)
+			{
+				len = str->size;
+			}
+			stack.push(ObjectHelper::NewInteger(len));
+			return 1;
+		}
+	}
+	return 0;
+
+}
+
+int LogicCode::Std::string_reverse(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto str = arg1->GetString();
+			if (str != NULL)
+			{
+				auto len_str = str->size;
+				auto end_str = len_str - 1;
+				auto strret = ObjectHelper::NewStringLen(len_str);
+				auto buff = (char*)strret->txt;
+				for (size_t i = 0; i < len_str; i++)
+				{
+					auto current = str->txt[end_str - 1];
+					buff[i] = current;
+				}
+				stack.push(strret);
+			}
+			else
+			{
+				stack.push(ObjectHelper::New());
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::string_lower(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto str = arg1->GetString();
+			if (str != NULL)
+			{
+				auto len_str = str->size;
+				auto strret = ObjectHelper::NewStringLen(len_str);
+				auto buff = (char*)strret->txt;
+				for (size_t i = 0; i < len_str; i++)
+				{
+					auto current = str->txt[i];
+					buff[i] = tolower(current);
+				}
+				stack.push(strret);
+			}
+			else
+			{
+				stack.push(ObjectHelper::New());
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::string_upper(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto str = arg1->GetString();
+			if (str != NULL)
+			{
+				auto len_str = str->size;
+				auto strret = ObjectHelper::NewStringLen(len_str);
+				auto buff = (char*)strret->txt;
+				for (size_t i = 0; i < len_str; i++)
+				{
+					auto current = str->txt[i];
+					buff[i] = toupper(current);
+				}
+				stack.push(strret);
+			}
+			else
+			{
+				stack.push(ObjectHelper::New());
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 {
 	auto size = v->size();
@@ -1998,7 +2126,7 @@ void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 
 void LogicCode::Std::__Init(LogicCodeState* state)
 {
-	auto scope = state->scope;
+	auto& scope = state->scope;
 	scope->SetVar("and", ObjectHelper::NewFunctionNative(state, { And }).v);
 	scope->SetVar("or", ObjectHelper::NewFunctionNative(state, { Or }).v);
 	scope->SetVar("not", ObjectHelper::NewFunctionNative(state, { Not }).v);
@@ -2069,9 +2197,12 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("number.tostring", ObjectHelper::NewFunctionNative(state, { number_ToString }).v);
 
 	// string
-
 	scope->SetVar("string.byte", ObjectHelper::NewFunctionNative(state, { string_byte }).v);
 	scope->SetVar("string.char", ObjectHelper::NewFunctionNative(state, { string_char }).v);
+	scope->SetVar("string.len", ObjectHelper::NewFunctionNative(state, { string_len }).v);
+	scope->SetVar("string.reverse", ObjectHelper::NewFunctionNative(state, { string_reverse }).v);
+	scope->SetVar("string.lower", ObjectHelper::NewFunctionNative(state, { string_lower }).v);
+	scope->SetVar("string.upper", ObjectHelper::NewFunctionNative(state, { string_upper }).v);
 
 }
 

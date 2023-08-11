@@ -9,19 +9,13 @@
 namespace LogicCode::ObjectHelper
 {
 	ObjectView<std::nullptr_t> New();
-	
 	ObjectView<LogicNumber> NewNumber(LogicNumber val);
 	ObjectView<LogicInteger> NewInteger(LogicInteger val);
-
-	
-
 	ObjectView<std::bitsetdynamic> NewBitset(size_t len);
-
-	
 	ObjectView<std::bitsetdynamic> NewBitset(bool v);
 	ObjectView<LogicRefBitset> NewRefBitset(const char* key, std::refcount_ptr<VariableData>& state);
-
 	ObjectView<LogicString> NewString(const char* val);
+	ObjectView<LogicString> NewStringLen(size_t bufferlen);
 	ObjectView<LogicFunctionObject> NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative& fnative);
 	ObjectView<LogicFunctionObject> NewFunctionNative(LogicCodeState* state, FunctionData::FunctionNative&& fnative);
 	ObjectView<LogicFunctionObject> NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime& fruntime);

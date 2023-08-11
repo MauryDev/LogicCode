@@ -9,7 +9,7 @@ namespace LogicCode
 			return sizeof(LogicString) + strlen + 1;
 		}
 		size_t size;
-		const char txt[];
+		char txt[];
 	};
 }
 
