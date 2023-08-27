@@ -90,7 +90,6 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 	auto& str = variable.v->data<LogicString>();
 	str.size = size;
 	memset((void*)str.txt, 0, size + 1);
-
 	return variable;
 }
 

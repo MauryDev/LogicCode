@@ -2101,6 +2101,40 @@ int LogicCode::Std::string_upper(FunctionData* __this, LogicCodeState* state)
 	return 0;
 }
 
+int LogicCode::Std::bitset_tostring(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto bitset = arg1->GetBitset();
+			size_t size = bitset->size();
+			if (bitset != NULL)
+			{
+				char* val = new char[size + 1];
+				val[size] = '\0';
+				for (size_t i = 0; i < size; i++)
+				{
+					val[i] = bitset->get(i);
+				}
+
+				stack.push(ObjectHelper::NewString(val));
+				return 1;
+			}
+			else
+			{
+				return _Error(state, "Invalid parameter #1");
+			}
+		}
+	}
+	return 0;
+}
+
 void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 {
 	auto size = v->size();

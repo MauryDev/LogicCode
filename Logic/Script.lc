@@ -1,3 +1,3 @@
 
 
-print(integer.tostring(int -1));
+print(string.upper("aaa"));

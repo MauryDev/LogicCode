@@ -80,9 +80,10 @@ namespace LogicCode::Std
 	int string_char(FunctionData* __this, LogicCodeState* state);
 	int string_len(FunctionData* __this, LogicCodeState* state);
 	int string_reverse(FunctionData* __this, LogicCodeState* state);
-
 	int string_lower(FunctionData* __this, LogicCodeState* state);
 	int string_upper(FunctionData* __this, LogicCodeState* state);
+
+	int bitset_tostring(FunctionData* __this, LogicCodeState* state);
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
 
