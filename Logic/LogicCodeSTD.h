@@ -84,6 +84,7 @@ namespace LogicCode::Std
 	int string_upper(FunctionData* __this, LogicCodeState* state);
 
 	int bitset_tostring(FunctionData* __this, LogicCodeState* state);
+	int bitset_parse(FunctionData* __this, LogicCodeState* state);
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
 

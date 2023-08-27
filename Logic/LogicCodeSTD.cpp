@@ -2120,10 +2120,43 @@ int LogicCode::Std::bitset_tostring(FunctionData* __this, LogicCodeState* state)
 				val[size] = '\0';
 				for (size_t i = 0; i < size; i++)
 				{
-					val[i] = bitset->get(i);
+					val[i] = bitset->get(i) ? '1' : '0';
 				}
 
 				stack.push(ObjectHelper::NewString(val));
+				return 1;
+			}
+			else
+			{
+				return _Error(state, "Invalid parameter #1");
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::bitset_parse(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto str = arg1->GetString();
+			size_t size = str->size;
+			if (str != NULL)
+			{
+				auto bitset = ObjectHelper::NewBitset(size);
+				for (size_t i = 0; i < size; i++)
+				{
+					bool currentval = str->txt[i] == '1';
+					bitset->set(i, currentval);
+				}
+				stack.push(bitset);
 				return 1;
 			}
 			else
@@ -2161,6 +2194,7 @@ void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 void LogicCode::Std::__Init(LogicCodeState* state)
 {
 	auto& scope = state->scope;
+
 	scope->SetVar("and", ObjectHelper::NewFunctionNative(state, { And }).v);
 	scope->SetVar("or", ObjectHelper::NewFunctionNative(state, { Or }).v);
 	scope->SetVar("not", ObjectHelper::NewFunctionNative(state, { Not }).v);
@@ -2237,6 +2271,10 @@ void LogicCode::Std::__Init(LogicCodeState* state)
 	scope->SetVar("string.reverse", ObjectHelper::NewFunctionNative(state, { string_reverse }).v);
 	scope->SetVar("string.lower", ObjectHelper::NewFunctionNative(state, { string_lower }).v);
 	scope->SetVar("string.upper", ObjectHelper::NewFunctionNative(state, { string_upper }).v);
+
+	// bitset
+	scope->SetVar("bitset.tostring", ObjectHelper::NewFunctionNative(state, { bitset_tostring }).v);
+	scope->SetVar("bitset.parse", ObjectHelper::NewFunctionNative(state, { bitset_parse }).v);
 
 }
 
