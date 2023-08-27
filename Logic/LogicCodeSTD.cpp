@@ -1130,7 +1130,7 @@ int LogicCode::Std::TruthTable(FunctionData* __this, LogicCodeState* state)
 	auto& stack = state->stack;
 	auto& scope = state->scope;
 	auto len = stack.sizeoffset();
-	if (len == 2)
+	if (len >= 2)
 	{
 		auto argslen = stack.get(1);
 		auto obj =  stack.get(0);
@@ -1160,6 +1160,45 @@ int LogicCode::Std::TruthTable(FunctionData* __this, LogicCodeState* state)
 
 
 					__Inc(inputs);
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::ControlledBuffer(FunctionData* __this, LogicCodeState* state)
+{
+	// ControlledBuffer(bitset value,bitset<1> enable) -> bitset
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 2)
+	{
+		auto& arg1 = stack.get(0);
+		auto& arg2 = stack.get(1);
+
+		if (arg1 && arg2)
+		{
+			auto bitset1 = arg1->GetBitset();
+			auto enable = arg1->GetBitset();
+			if (bitset1 != NULL && enable != NULL)
+			{
+				if (enable->get(0))
+				{
+					auto size = bitset1->size();
+					auto ret = ObjectHelper::NewBitset(size);
+					for (size_t i = 0; i < size; i++)
+					{
+						ret->set(i, bitset1->get(i));
+					}
+					stack.push(ret);
+					return 1;
+				}
+				else
+				{
+					auto ret = ObjectHelper::NewBitset((size_t)0);
+					stack.push(ret);
 				}
 			}
 		}
@@ -2124,6 +2163,7 @@ int LogicCode::Std::bitset_tostring(FunctionData* __this, LogicCodeState* state)
 				}
 
 				stack.push(ObjectHelper::NewString(val));
+				delete[] val;
 				return 1;
 			}
 			else
@@ -2157,6 +2197,35 @@ int LogicCode::Std::bitset_parse(FunctionData* __this, LogicCodeState* state)
 					bitset->set(i, currentval);
 				}
 				stack.push(bitset);
+				return 1;
+			}
+			else
+			{
+				return _Error(state, "Invalid parameter #1");
+			}
+		}
+	}
+	return 0;
+}
+
+int LogicCode::Std::bitset_len(FunctionData* __this, LogicCodeState* state)
+{
+	auto& stack = state->stack;
+	auto& scope = state->scope;
+	auto len = stack.sizeoffset();
+	if (len >= 1)
+	{
+		auto& arg1 = stack.get(0);
+
+		if (arg1)
+		{
+			auto bitset = arg1->GetBitset();
+			size_t size = bitset->size();
+			if (bitset != NULL)
+			{
+				
+
+				stack.push(ObjectHelper::NewInteger(size));
 				return 1;
 			}
 			else
