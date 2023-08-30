@@ -23,8 +23,8 @@ namespace LogicCode
 		Integer, // i64
 		Number, // f64,
 		Function, // FunctionData
-		Userdata, // UserData
-		LightUserData // UserDataView
+		UserObject, // LogicUserObject
+		Pointer // LogicPointer
 	};
 	using LogicNumber = double;
 	using LogicInteger = signed long long;

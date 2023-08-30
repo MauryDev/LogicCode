@@ -49,5 +49,6 @@ void Test(int argc, const char** args)
 int main(int argc, const char** args)
 {
     Test(argc, args);
+    system("pause");
 
 }

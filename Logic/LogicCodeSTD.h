@@ -18,8 +18,6 @@ namespace LogicCode::Std
 	int While(LogicCodeState* state, Light::List& current);
 	int Fun(LogicCodeState* state, Light::List& current);
 	int Return(LogicCodeState* state, Light::List& current);
-	int Print(FunctionData* __this, LogicCodeState* state);
-	void _Print(Object::refcount_ptr_elem& obj);
 	int Const(LogicCodeState* state, Light::List& current);
 	int Var(LogicCodeState* state, Light::List& current);
 	int Case(LogicCodeState* state, Light::List& current);
@@ -40,6 +38,13 @@ namespace LogicCode::Std
 	int GetType(FunctionData* __this, LogicCodeState* state);
 	int TruthTable(FunctionData* __this, LogicCodeState* state);
 	int ControlledBuffer(FunctionData* __this, LogicCodeState* state);
+	int ControlledInverter(FunctionData* __this, LogicCodeState* state);
+	int OddParity(FunctionData* __this, LogicCodeState* state);
+	int EvenParity(FunctionData* __this, LogicCodeState* state);
+
+    int Print(FunctionData* __this, LogicCodeState* state);
+    void _Print(Object::refcount_ptr_elem& obj);
+    int Delay(FunctionData* __this, LogicCodeState* L);
 
 	int function_isNative(FunctionData* __this, LogicCodeState* state);
 	int function_isRuntime(FunctionData* __this, LogicCodeState* state);
@@ -85,6 +90,7 @@ namespace LogicCode::Std
 	int bitset_tostring(FunctionData* __this, LogicCodeState* state);
 	int bitset_parse(FunctionData* __this, LogicCodeState* state);
 	int bitset_len(FunctionData* __this, LogicCodeState* state);
+    int bitset_concat(FunctionData* __this, LogicCodeState* L);
 
 	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
 

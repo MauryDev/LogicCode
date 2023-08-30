@@ -14,14 +14,14 @@ namespace LogicCode
 		T& operator*() {
 			return v->data<T>();
 		}
-		operator Object::refcount_ptr_elem&&()
+		operator Object::refcount_ptr_elem&()
 		{
 			return v;
 		}
-		operator Object::refcount_ptr_elem& ()
+		/*operator Object::refcount_ptr_elem& ()
 		{
 			return v;
-		}
+		}*/
 	};
 }
 

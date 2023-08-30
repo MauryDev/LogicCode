@@ -159,6 +159,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Logic.cpp" />
+    <ClCompile Include="LogicCodeExt.cpp" />
     <ClCompile Include="LogicCodeHelper.cpp" />
     <ClCompile Include="LogicCodeSTD.cpp" />
     <ClCompile Include="LogicFunctionObject.hpp" />
@@ -176,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bitsetdynamic.hpp" />
+    <ClInclude Include="LogicCodeExt.h" />
     <ClInclude Include="LogicCodeHelper.h" />
     <ClInclude Include="LogicCodeSTD.h" />
     <ClInclude Include="LogicFunctionData.hpp" />
