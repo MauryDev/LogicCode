@@ -8,6 +8,8 @@
 #include "LogicFunctionData.hpp"
 #include "LogicCodeExt.h"
 #include <Windows.h>
+#include "LogicDebug.h"
+
 using namespace LogicCodeExt;
 
 int LogicCode::Std::And(FunctionData* __this, LogicCodeState* L)
@@ -194,7 +196,7 @@ int LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* L)
             {
                 for (size_t i = 0; i < sizeinput; i++)
                 {
-                    firstparam->set(i, first->get(i) || current->get(i));
+                    firstparam->set((int)i, first->get(i) || current->get(i));
                 }
             }
             else
@@ -530,7 +532,64 @@ void LogicCode::Std::_Print(Object::refcount_ptr_elem& obj)
     }
 }
 
-int LogicCode::Std::Delay(FunctionData* __this, LogicCodeState* L)
+void LogicCode::Std::_Debug_Log(Object::refcount_ptr_elem& obj)
+{
+    if (!obj || obj->CheckType(ObjectType::None))
+    {
+        LogicDebug::Log("None");
+    }
+    else if (obj->CheckType(ObjectType::Bitset))
+    {
+        auto result = obj->GetBitset();
+
+        auto str = result->to_string();
+        LogicDebug::Log(str.c_str());
+
+        
+    }
+    else if (obj->CheckType(ObjectType::Integer))
+    {
+        auto result = obj->GetInteger();
+        std::string varAsString = std::to_string(result);
+        LogicDebug::Log(varAsString.c_str());
+
+    }
+    else if (obj->CheckType(ObjectType::Number))
+    {
+        auto result = obj->GetNumber();
+
+        std::string varAsString = std::to_string(result);
+        LogicDebug::Log(varAsString.c_str());
+
+        
+    }
+    else if (obj->CheckType(ObjectType::RefBitset))
+    {
+        char str[30] = {};
+        auto num = (LogicInteger)obj.get();
+        _i64toa_s(num, str, 30, 16);
+
+        LogicDebug::Log("Reference: ");
+        LogicDebug::Log(str);
+
+    }
+    else if (obj->CheckType(ObjectType::String))
+    {
+        auto result = obj->GetString();
+        LogicDebug::Log(result->txt);
+    }
+    else if (obj->CheckType(ObjectType::Function))
+    {
+        char str[30] = {};
+        auto num = (LogicInteger)obj.get();
+        _i64toa_s(num, str, 30, 16);
+
+        LogicDebug::Log("Function: ");
+        LogicDebug::Log(str);
+    }
+}
+
+int LogicCode::Std::Debug_Log(FunctionData* __this, LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
@@ -538,15 +597,22 @@ int LogicCode::Std::Delay(FunctionData* __this, LogicCodeState* L)
 
     if (len >= 1)
     {
-        auto v = stack.get(0);
-        
-        LogicInteger num = v ? v->GetInteger() : 0;
 
-        Sleep(num);
+        for (size_t i = 0; i < len; i++)
+        {
+            if (i > 0)
+            {
+                LogicDebug::Log(" ");
 
+            }
+            _Debug_Log(stack.get(i));
+
+        }
+        LogicDebug::Log("\n");
     }
     return 0;
 }
+
 
 int LogicCode::Std::Const(LogicCodeState* L, Light::List& current)
 {
@@ -2416,7 +2482,8 @@ int LogicCode::Std::bitset_concat(FunctionData* __this, LogicCodeState* L)
                 auto vallen = val->size();
                 for (size_t i2 = 0; i2 < vallen; i2++)
                 {
-                    auto currentvaluebit = val->get(i2);
+
+                    auto currentvaluebit = val->get(vallen - 1 - i2);
                     valret->set(indexcurrent - i2, currentvaluebit);
                 }
                 indexcurrent -= vallen;
@@ -2459,7 +2526,7 @@ void LogicCode::Std::__Init(LogicCodeState* L)
 
     // io functions 
     logic_scope_setvar_fnnative(L, "print", Print);
-    logic_scope_setvar_fnnative(L, "sleep", Delay);
+    logic_scope_setvar_fnnative(L, "debug.log", Debug_Log);
 
     // general function
     logic_scope_setvar_fnnative(L, "type", GetType);

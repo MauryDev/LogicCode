@@ -44,7 +44,8 @@ namespace LogicCode::Std
 
     int Print(FunctionData* __this, LogicCodeState* state);
     void _Print(Object::refcount_ptr_elem& obj);
-    int Delay(FunctionData* __this, LogicCodeState* L);
+    void _Debug_Log(Object::refcount_ptr_elem& obj);
+    int Debug_Log(FunctionData* __this, LogicCodeState* state);
 
 	int function_isNative(FunctionData* __this, LogicCodeState* state);
 	int function_isRuntime(FunctionData* __this, LogicCodeState* state);
