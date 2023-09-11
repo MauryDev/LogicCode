@@ -157,6 +157,12 @@ fulladder(1,1,0,ref result,ref CarryIn);
 
 debug.log(result,CarryIn);
 ```
+<style>
+r { color: Red }
+o { color: Orange }
+g { color: Green }
+</style>
 
-<span style="color:blue">some *blue* text</span>.
+
+<r >some *blue* text</r>.
 
