@@ -13,7 +13,6 @@ namespace LogicCode::Helper
 
 	LogicCode::Object::refcount_ptr_elem ToBitSetFromList(LogicCodeState* state,Light::List& current);
 	
-	LogicCode::ObjectView<std::bitsetdynamic> ToBitSet(LogicCodeState* state);
 	int PushList(LogicCodeState* state, Light::List& current);
 
 	

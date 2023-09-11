@@ -14,10 +14,13 @@ struct VariableData
 {
 
 	
-
+    struct DataVar {
+        bool isConst;
+        LogicCode::Object::refcount_ptr_elem val;
+    };
 	std::refcount_ptr<VariableData> parent;
-	std::unordered_map<std::string, LogicCode::Object::refcount_ptr_elem> vars;
-	std::unordered_map<std::string, LogicCode::Object::refcount_ptr_elem> consts;
+    std::unordered_map<std::string, DataVar> datavar;
+
 	VariableData() {
 		parent = {};
 	}
@@ -25,21 +28,17 @@ struct VariableData
 
 	LogicCode::Object::refcount_ptr_elem GetValue(std::string& str)
 	{
-		auto invars = vars.find(str);
-		if (invars != vars.end())
-		{
-			return invars->second;
-		}
-		auto inconsts = consts.find(str);
-		if (inconsts != consts.end())
-		{
-			return inconsts->second;
-		}
-		if (parent)
-		{
-			return parent->GetValue(str);
-		}
-		return LogicCode::Object::refcount_ptr_elem();
+        auto variable = datavar.find(str);
+        if (variable != datavar.end())
+        {
+            return variable->second.val;
+        }
+        if (parent)
+        {
+            return parent->GetValue(str);
+        }
+        return LogicCode::Object::refcount_ptr_elem();
+       
 	}
 	LogicCode::Object::refcount_ptr_elem GetValue(std::string&& str)
 	{
@@ -52,21 +51,18 @@ struct VariableData
 
 	bool Exists(std::string& str, bool checkparent = true)
 	{
-		auto invars = vars.find(str);
-		if (invars != vars.end())
-		{
-			return true;
-		}
-		auto inconsts = consts.find(str);
-		if (inconsts != consts.end())
-		{
-			return true;
-		}
-		if (checkparent && parent)
-		{
-			return parent->Exists(str);
-		}
-		return false;
+        auto variable = datavar.find(str);
+        if (variable != datavar.end())
+        {
+            return true;
+        }
+        if (checkparent && parent)
+        {
+            return parent->Exists(str);
+        }
+        return false;
+
+		
 	}
 	bool Exists(std::string&& str, bool checkparent = true)
 	{
@@ -75,17 +71,14 @@ struct VariableData
 
 	LogicCode::VarType GetTypeVariable(std::string& str, bool checkparent = true)
 	{
-		auto invars = vars.find(str);
-		if (invars != vars.end())
-		{
-			return LogicCode::VarType::Var;
-		}
-		auto inconsts = consts.find(str);
-		if (inconsts != consts.end())
-		{
-			return LogicCode::VarType::Const;
-		}
-		
+        auto variable = datavar.find(str);
+        if (variable != datavar.end())
+        {
+            return variable->second.isConst ? 
+                LogicCode::VarType::Const :
+                LogicCode::VarType::Var;            
+        }
+
 		if (checkparent && parent)
 		{
 			return parent->GetTypeVariable(str);
@@ -97,24 +90,24 @@ struct VariableData
 		return GetTypeVariable(str, checkparent);
 	}
 
-	void SetConst(std::string& str, LogicCode::Object::refcount_ptr_elem&& v, bool checkparent = true)
+	void SetConst(std::string& str, LogicCode::Object::refcount_ptr_elem&& v)
 	{
-		SetConst(str, v, checkparent);
+		SetConst(str, v);
 	}
-	void SetConst(std::string& str, LogicCode::Object::refcount_ptr_elem& v, bool checkparent = true)
+	void SetConst(std::string& str, LogicCode::Object::refcount_ptr_elem& v)
 	{
-		if (!Exists(str, checkparent))
+		if (!Exists(str, false))
 		{
-			consts[str] = v;
+            datavar[str] = {true, v };
 		}
 	}
-	void SetConst(std::string&& str, LogicCode::Object::refcount_ptr_elem&& v, bool checkparent = true)
+	void SetConst(std::string&& str, LogicCode::Object::refcount_ptr_elem&& v)
 	{
-		SetConst(str, v, checkparent);
+		SetConst(str, v);
 	}
-	void SetConst(std::string&& str, LogicCode::Object::refcount_ptr_elem& v, bool checkparent = true)
+	void SetConst(std::string&& str, LogicCode::Object::refcount_ptr_elem& v)
 	{
-		SetConst(str, v, checkparent);
+		SetConst(str, v);
 	}
 
 	void SetVar(std::string& str, LogicCode::Object::refcount_ptr_elem&& v, bool checkparent = true)
@@ -123,29 +116,16 @@ struct VariableData
 	}
 	void SetVar(std::string& str, LogicCode::Object::refcount_ptr_elem& v, bool checkparent = true)
 	{
-		auto containsval = Exists(str, checkparent);
-		
-		if (containsval && GetTypeVariable(str,checkparent) == LogicCode::VarType::Var)
-		{
-			if (GetTypeVariable(str, checkparent) == LogicCode::VarType::Var)
-			{
-				auto invars = vars.find(str);
-				if (invars != vars.end())
-				{
-					invars->second = v;
-				}
+        auto test = GetTypeVariable(str, false);
+        if (test == LogicCode::VarType::Var || test == LogicCode::VarType::None)
+        {
+            datavar[str] = { false, v };
 
-				if (checkparent && parent)
-				{
-					parent->SetVar(str, v, checkparent);
-				}
-				
-			}
-		}
-		else
-		{
-			vars[str] = v;
-		}
+        }
+        if (checkparent && parent)
+        {
+            parent->SetVar(str, v, checkparent);
+        }
 		
 	}
 	void SetVar(std::string&& str, LogicCode::Object::refcount_ptr_elem&& v, bool checkparent = true)

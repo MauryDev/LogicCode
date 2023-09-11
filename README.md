@@ -92,10 +92,68 @@ print(C);
 In this example, we declare the variables `A` and `B` with logical values. Then, we define the function `mylogic` that performs logical operations based on the parameters `a` and `b`. Finally, we call the `mylogic` function with the values `A` and `B` and print the result.
 
 
-Other Example: 
+Other Examples:
+
+Example 1:
 ```lua
 truthtable(fun (a,b) @{
 	print("A:",a,"B:",b,"Result:", and(a,b));
 },int 2);
 
+```
+Example 2:
+```lua
+fun twobitmax(a1,a2) @{
+    if (or(cmpgreater(a1,a2), cmpequal(a1,a2))) @{
+        return a1;
+    } else @{
+        return a2;
+    };
+};
+
+truthtable(fun(a,b,c,d) @{
+    var A = bitset.concat(a,b);
+    var B = bitset.concat(c,d);
+    var C = twobitmax(A,B);
+    debug.log(A,B);
+},int 4);
+
+
+
+```
+
+Example 3:
+```lua
+fun halfadder(A,B,ref_S,ref_C) @{
+    const S = xor(A, B);
+    const C = and(A, B);
+    refbitset.set(ref_S, S);
+    refbitset.set(ref_C, C);
+};
+var carry = none;
+var result = none;
+
+halfadder(1,1,ref result,ref carry);
+debug.log(result,carry);
+```
+
+Example 4:
+
+```lua
+fun fulladder(A,B,C,ref_S,ref_C) @{
+    const t1 = xor(A,B);
+    const t2 = xor(t1,C);
+    const t3 = and(t1,C);
+    const t4 = and(A,B);
+    const t5 = or(t3,t4);
+    refbitset.set(ref_S,t2);
+    refbitset.set(ref_C,t5);
+};
+
+
+var result = none;
+var CarryIn = none;
+fulladder(1,1,0,ref result,ref CarryIn);
+
+debug.log(result,CarryIn);
 ```

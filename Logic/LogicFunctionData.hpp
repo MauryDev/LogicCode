@@ -13,7 +13,7 @@ struct FunctionData
 		Runtime,
 		Native
 	};
-	typedef int(*Fun)(FunctionData* __this, LogicCodeState* state);
+	typedef int(*Fun)(LogicCodeState* state);
 	struct FunctionRuntime
 	{
 		std::vector<std::string> argsname;

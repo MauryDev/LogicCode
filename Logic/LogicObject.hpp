@@ -94,7 +94,10 @@ namespace LogicCode
 		{
 			return (type == ObjectType::String ? ptr<LogicString>() : nullptr);
 		}
-		
+        LogicPointer GetPointer()
+        {
+            return (type == ObjectType::Pointer ? data<LogicPointer>() : nullptr);
+        }
 
 		static void Free(refcount_elem* _this);
 		

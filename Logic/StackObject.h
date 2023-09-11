@@ -28,12 +28,12 @@ public:
 	void push(LogicCode::ObjectView<T>& v)
 	{
 	
-		stack.push_back(v.v);
+		stack.push_back(v);
 	}
 	template<typename T>
 	void push(LogicCode::ObjectView<T>&& v)
 	{
-		stack.push_back(v.v);
+		stack.push_back(v);
 	}
 	void push(LogicCode::Object::refcount_ptr_elem& v)
 	{
@@ -61,7 +61,7 @@ public:
 	}
 	LogicCode::Object::refcount_ptr_elem& top()
 	{
-		return stack[size() - 1];
+		return stack.back();
 	}
 	LogicCode::Object::refcount_ptr_elem& get(size_t n)
 	{

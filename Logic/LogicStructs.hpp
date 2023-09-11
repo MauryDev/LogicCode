@@ -29,7 +29,8 @@ namespace LogicCode
 	using LogicNumber = double;
 	using LogicInteger = signed long long;
 	using LogicBitset = std::bitsetdynamic;
-	
+    using LogicPointer = void*;
+
 	struct LogicBitsetConfig {
 		size_t size;
 	};

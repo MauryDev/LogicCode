@@ -5,19 +5,16 @@
 #include "LogicFunctionData.hpp"
 namespace LogicCode
 {
-	struct LogicFunctionObject
+	struct LogicFunctionObject: FunctionData
 	{
-		FunctionData* data()
-		{
-			return (FunctionData*)this;
-		}
 
 		
 		static LogicFunctionObject* FromObject(LogicCode::Object& _this) {
-			return (_this.type == ObjectType::Function ? _this.ptr<LogicFunctionObject>() : nullptr);
-		}
+            return FromObject(&_this);
+        }
 		static LogicFunctionObject* FromObject(LogicCode::Object* _this) {
-			return FromObject(*_this);
+            return (_this != nullptr && _this->type == ObjectType::Function ? _this->ptr<LogicFunctionObject>() : nullptr);
+
 		}
 		static LogicFunctionObject* FromObject(Object::refcount_ptr_elem& _this) {
 			return FromObject(_this.get());
@@ -39,7 +36,7 @@ namespace LogicCode
 		}
 		void Free()
 		{
-			FunctionData::Free(data());
+			FunctionData::Free(this);
 		}
 	};
 }

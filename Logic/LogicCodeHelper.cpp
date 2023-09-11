@@ -4,9 +4,10 @@
 #include <memory>
 #include "LogicObjectHelper.hpp"
 #include "LogicFunctionData.hpp"
+#include "LogicDebug.h"
+
 LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToObjectFromCommand(LogicCodeState* state, Light::CommandResult& command)
 {
-
 	if (!state->CanRun())
 	{
 		return {};
@@ -54,21 +55,26 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 	{
 		auto str = command.str;
 
-		if (str->Equals("true") || str->Equals("TRUE"))
+		if (str->Equals("true"))
 		{
-			auto bitset = ObjectHelper::NewBitset((size_t)1);
+			auto bitset = ObjectHelper::NewBitset(true);
 			bitset->set(0, true);
 			state->stack.push(bitset);
 
 			return 1;
 		}
-		else if (str->Equals("false") || str->Equals("FALSE"))
+		else if (str->Equals("false"))
 		{
-			auto bitset = ObjectHelper::NewBitset((size_t)1);
-			bitset->set(0, false);
+			auto bitset = ObjectHelper::NewBitset(false);
 			state->stack.push(bitset);
 			return 1;
 		}
+        else if (str->Equals("none"))
+        {
+            auto ret = ObjectHelper::New();
+            state->stack.push(ret);
+            return 1;
+        }
 		else
 		{
 			state->stack.push(state->scope->GetValue(str->data()));
@@ -81,6 +87,7 @@ int LogicCode::Helper::PushCommand(LogicCodeState* state, Light::CommandResult& 
 		auto str = command.str;
 
 		state->stack.push(ObjectHelper::NewString(str->data()));
+        return 1;
 	}
 	else if (command.resultType == Light::ResultType::Expression)
 	{
@@ -135,30 +142,6 @@ LogicCode::Object::refcount_ptr_elem LogicCode::Helper::ToBitSetFromList(LogicCo
 
 }
 
-LogicCode::ObjectView<std::bitsetdynamic> LogicCode::Helper::ToBitSet(LogicCodeState* state)
-{
-	if (!state->CanRun())
-	{
-		return {};
-	}
-	auto v = state->stack.sizeoffset();
-	if (v > 0)
-	{
-		auto toremove = v;
-		auto valueindex = state->stack.sizeoffset() - toremove;
-		auto ret = state->stack.get(valueindex);
-
-		for (size_t i = 0; i < toremove; i++)
-		{
-			state->stack.pop();
-		}
-		return { ret };
-	}
-	else
-	{
-		return {};
-	}
-}
 
 int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 {
@@ -171,7 +154,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 	auto& statevd = state->scope;
 	if (instructionsize > 0)
 	{
-		auto typeexpr = current[0];
+		auto& typeexpr = current[0];
 
 		if (typeexpr.resultType == Light::ResultType::Label)
 		{
@@ -223,7 +206,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 			{
 				if (instructionsize >= 3)
 				{
-					auto type = current[1];
+					auto& type = current[1];
 
 					if (type.resultType == Light::ResultType::Operador)
 					{
@@ -248,19 +231,17 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 				}
 				else if (instructionsize == 2)
 				{
-					auto type = current[1];
+					auto& type = current[1];
 					if (type.resultType == Light::ResultType::Expression)
 					{
 						auto expression = type.expression;
 						auto stack_obj = statevd->GetValue(currentopcode->data());
 						if (stack_obj)
 						{
-							auto getfn1 = LogicFunctionObject::FromObject(stack_obj);
+							auto getfn = LogicFunctionObject::FromObject(stack_obj);
 
-							if (getfn1 != NULL)
+							if (getfn != NULL)
 							{
-
-								auto getfn = getfn1->data();
 								if (getfn->type == FunctionData::FunctionType::Runtime)
 								{
 									auto& parent = getfn->parentscope;
@@ -271,11 +252,18 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 									newscope->parent = parent;
 
 									auto& args = getfn->get_runtimefn().argsname;
+                                    auto argslen = expression->get_Count();
 									auto expressionlen = args.size();
-
+                                    
 									for (size_t i = 0; i < expressionlen; i++)
 									{
-										auto arg = ToBitSetFromList(state, expression->at(i));
+                                        Object::refcount_ptr_elem arg;
+                                        if (i < argslen)
+                                        {
+                                            arg = ToBitSetFromList(state, expression->at(i));
+
+                                        }
+                                        
 										if (!state->CanRun())
 										{
 
@@ -285,7 +273,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 											}
 											return 0;
 										}
-										newscope->SetConst(args[i], arg, false);
+										newscope->SetConst(args[i], arg);
 									}
 									state->scope = newscope;
 
@@ -298,8 +286,6 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 								}
 								else if (getfn->type == FunctionData::FunctionType::Native)
 								{
-									auto getfn = getfn1->data();
-
 									auto expressionlen = expression->get_Count();
 									auto oldoffset = statestack.get_Offset();
 									statestack.set_Offset(statestack.size());
@@ -315,7 +301,7 @@ int LogicCode::Helper::PushList(LogicCodeState* state, Light::List& current)
 											return 0;
 										}
 									}
-									auto lenret = getfn->get_nativefn().callback(getfn, state);
+									auto lenret = getfn->get_nativefn().callback(state);
 									auto toremove = statestack.sizeoffset() - lenret;
 									for (size_t i = 0; i < toremove; i++)
 									{
@@ -416,7 +402,7 @@ int LogicCode::Helper::ExecuteInstuctionShared(LogicCodeState* state, Light::Ins
 	{
 		return 0;
 	}
-	auto oldscope = state->scope;
+	auto& oldscope = state->scope;
 	auto newscope = std::refcount_ptr<VariableData>::make();
 	newscope->parent = oldscope;
 	state->scope = newscope;
@@ -432,29 +418,30 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs, int retlen
 {
 	auto& stack = state->stack;
 	auto fn = stack.top();
+
 	int retleninstack = 0;
 	auto idxstart = stack.sizeoffset() - nargs - 1;
+
+
 	if (fn)
 	{
-		auto fnobj = LogicFunctionObject::FromObject(fn);
-		stack.pop();
-		if (fnobj != NULL)
+        stack.pop();
+		auto fndata = LogicFunctionObject::FromObject(fn);
+		if (fndata != NULL)
 		{
-			auto fndata = fnobj->data();
 			auto oldoffset = stack.get_Offset();
 			stack.set_Offset(stack.size() - nargs);
 			
 			if (fndata->type == FunctionData::FunctionType::Native)
 			{
 				auto& fnative = fndata->get_nativefn();
-				retleninstack = fnative.callback(fndata, state);
+				retleninstack = fnative.callback(state);
 			}
 			else if (fndata->type == FunctionData::FunctionType::Runtime)
 			{
-
 				auto& parent = fndata->parentscope;
 
-				auto& oldscope = state->scope;
+				auto oldscope = state->scope;
 
 				auto newscope = std::refcount_ptr<VariableData>::make();
 
@@ -480,7 +467,9 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs, int retlen
 
 		}
 		
+
 	}
+
 	for (int i = 0; i < nargs; i++)
 	{
 		state->stack.remove(idxstart );
@@ -493,7 +482,7 @@ int LogicCode::Helper::CallFunction(LogicCodeState* state, int nargs, int retlen
 		{
 			stack.pop();
 		}
-		return  retlen >= retleninstack ? retleninstack : retlen;
+		return retlen >= retleninstack ? retleninstack : retlen;
 
 	}
 	else

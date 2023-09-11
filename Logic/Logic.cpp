@@ -30,6 +30,8 @@ void Test(int argc, const char** args)
     }
     Light::Token token;
     std::ifstream file(filesrc);
+    std::ofstream file2("Test.txt");
+
     auto strv = slurp(file);
     Light::string_view str(strv.data(), strv.length());
     token.ReadSTR_s(str);
@@ -47,13 +49,24 @@ void Test(int argc, const char** args)
         std::cout <<"ERROR: " << results->error << std::endl;
     }
     std::cout << "Tempo de execucao: " << duracao.count() << " microsegundos" << std::endl;
+
+    auto& scope = results->scope;
+    
+    for (auto& t: scope->datavar)
+    {
+        file2 << '"' << t.first << "\"," << std::endl;
+    }
+
 }
-int _Test(int argc, const char** args)
+#ifdef _DEBUG
+int main(int argc, const char** args)
 {
     Test(argc, args);
     system("pause");
     return 1;
 }
+#else
+
 BOOL WINAPI DllMain(
     HINSTANCE hinstDLL,  // handle to DLL module
     DWORD fdwReason,     // reason for calling function
@@ -87,11 +100,17 @@ BOOL WINAPI DllMain(
     }
     return TRUE;  // Successful DLL_PROCESS_ATTACH.
 }
+#endif
+
 extern "C"
 {
-    DLLEXPORT void SetupLog(void* method)
+    DLLEXPORT void Setup_DebugLog(void* method)
     {
         LogicCode::LogicDebug::funlog = (LogicCode::LogicDebug::FunLog)method;
+    }
+    DLLEXPORT void Setup_DebugClear(void* method)
+    {
+        LogicCode::LogicDebug::funclear = (LogicCode::LogicDebug::FunClear)method;
     }
 
     DLLEXPORT void runCode(const char* code)

@@ -1,2 +1,15 @@
-d = bitset.concat(10,11);
+fun twobitmax(a1,a2) @{
+    if (or(cmpgreater(a1,a2), cmpequal(a1,a2))) @{
+        return a1;
+    } else @{
+        return a2;
+    };
+};
 
+
+truthtable(fun(a,b,c,d) @{
+    var A = bitset.concat(a,b);
+    var B = bitset.concat(c,d);
+    var result = twobitmax(A,B);
+    and(a,b);
+},int 4);

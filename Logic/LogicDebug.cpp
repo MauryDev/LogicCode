@@ -9,3 +9,11 @@ void LogicCode::LogicDebug::Log(const char* value)
         funlog(value);
     }
 }
+
+void LogicCode::LogicDebug::Clear()
+{
+    if (funclear != nullptr)
+    {
+        funclear();
+    }
+}

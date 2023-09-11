@@ -6,94 +6,110 @@
 namespace LogicCode::Std
 {	
 
-	int And(FunctionData* __this, LogicCodeState* state);
-	int Or(FunctionData* __this, LogicCodeState* state);
-	int Not(FunctionData* __this, LogicCodeState* state);
-	int Xor(FunctionData* __this, LogicCodeState* state);
-	int Nand(FunctionData* __this, LogicCodeState* state);
-	int Xnor(FunctionData* __this, LogicCodeState* state);
-	int Nor(FunctionData* __this, LogicCodeState* state);
-	int Xnor(FunctionData* __this, LogicCodeState* state);
-	int If(LogicCodeState* state,Light::List& current);
-	int While(LogicCodeState* state, Light::List& current);
-	int Fun(LogicCodeState* state, Light::List& current);
-	int Return(LogicCodeState* state, Light::List& current);
-	int Const(LogicCodeState* state, Light::List& current);
-	int Var(LogicCodeState* state, Light::List& current);
-	int Case(LogicCodeState* state, Light::List& current);
-	int Buffer(FunctionData* __this, LogicCodeState* state);
-	int Zero(FunctionData* __this, LogicCodeState* state);
-	int One(FunctionData* __this, LogicCodeState* state);
-	int Intv(LogicCodeState* state, Light::List& current);
-	int Numv(LogicCodeState* state, Light::List& current);
-	int Ref(LogicCodeState* state, Light::List& current);
-	int Mux(FunctionData* __this, LogicCodeState* state);
-	int Demux(FunctionData* __this, LogicCodeState* state);
-	int Decoder(FunctionData* __this, LogicCodeState* state);
-	int BitSelector(FunctionData* __this, LogicCodeState* state);
-	int Add(FunctionData* __this, LogicCodeState* state);
-	int Sub(FunctionData* __this, LogicCodeState* state);
-	int Mul(FunctionData* __this, LogicCodeState* state);
-	int Div(FunctionData* __this, LogicCodeState* state);
-	int GetType(FunctionData* __this, LogicCodeState* state);
-	int TruthTable(FunctionData* __this, LogicCodeState* state);
-	int ControlledBuffer(FunctionData* __this, LogicCodeState* state);
-	int ControlledInverter(FunctionData* __this, LogicCodeState* state);
-	int OddParity(FunctionData* __this, LogicCodeState* state);
-	int EvenParity(FunctionData* __this, LogicCodeState* state);
+    int If(LogicCodeState* state, Light::List& current);
+    int While(LogicCodeState* state, Light::List& current);
+    int Fun(LogicCodeState* state, Light::List& current);
+    int Return(LogicCodeState* state, Light::List& current);
+    int Const(LogicCodeState* state, Light::List& current);
+    int Var(LogicCodeState* state, Light::List& current);
+    int Case(LogicCodeState* state, Light::List& current);
+    int Intv(LogicCodeState* state, Light::List& current);
+    int Numv(LogicCodeState* state, Light::List& current);
+    int Ref(LogicCodeState* state, Light::List& current);
+   
 
-    int Print(FunctionData* __this, LogicCodeState* state);
+
+	int And(LogicCodeState* state);
+	int Or(LogicCodeState* state);
+	int Not(LogicCodeState* state);
+	int Xor(LogicCodeState* state);
+	int Nand(LogicCodeState* state);
+	int Xnor(LogicCodeState* state);
+	int Nor(LogicCodeState* state);
+	int Xnor(LogicCodeState* state);
+    int Buffer(LogicCodeState* state);
+	int ControlledBuffer(LogicCodeState* state);
+	int ControlledInverter(LogicCodeState* state);
+	int OddParity(LogicCodeState* state);
+	int EvenParity(LogicCodeState* state);
+
+    int Mux(LogicCodeState* L);
+    int Demux(LogicCodeState* L);
+    int Decoder(LogicCodeState* L);
+    int BitSelector(LogicCodeState* L);
+    int PriorityDecoder(LogicCodeState* L);
+
+    int Add(LogicCodeState* L);
+    int Sub(LogicCodeState* L);
+    int Mul(LogicCodeState* L);
+    int Div(LogicCodeState* L);
+    int Negator(LogicCodeState* L);
+
+    int GetType(LogicCodeState* state);
+    int IsNone(LogicCodeState* L);
+    int Argslen(LogicCodeState* L);
+    int Zero(LogicCodeState* state);
+    int One(LogicCodeState* state);
+    int TruthTable(LogicCodeState* state);
+
+
+
+    int Print(LogicCodeState* state);
     void _Print(Object::refcount_ptr_elem& obj);
     void _Debug_Log(Object::refcount_ptr_elem& obj);
-    int Debug_Log(FunctionData* __this, LogicCodeState* state);
+    int Debug_Log(LogicCodeState* state);
+    int Debug_Clear(LogicCodeState* state);
 
-	int function_isNative(FunctionData* __this, LogicCodeState* state);
-	int function_isRuntime(FunctionData* __this, LogicCodeState* state);
-	int function_argslen(FunctionData* __this, LogicCodeState* state);
-	int function_getargname(FunctionData* __this, LogicCodeState* state);
+	int function_isNative(LogicCodeState* state);
+	int function_isRuntime(LogicCodeState* state);
+	int function_argslen(LogicCodeState* state);
+	int function_getargname(LogicCodeState* state);
 
-	int refbitset_get(FunctionData* __this, LogicCodeState* state);
-	int refbitset_set(FunctionData* __this, LogicCodeState* state);
+	int refbitset_get(LogicCodeState* state);
+	int refbitset_set(LogicCodeState* state);
 
-	int integer_Abs(FunctionData* __this, LogicCodeState* state);
-	int integer_Equals(FunctionData* __this, LogicCodeState* state);
-	int integer_Clamp(FunctionData* __this, LogicCodeState* state);
-	int integer_IsNegative(FunctionData* __this, LogicCodeState* state);
-	int integer_IsPositive(FunctionData* __this, LogicCodeState* state);
-	int integer_Max(FunctionData* __this, LogicCodeState* state);
-	int integer_Min(FunctionData* __this, LogicCodeState* state);
-	int integer_Parse(FunctionData* __this, LogicCodeState* state);
-	int integer_Sign(FunctionData* __this, LogicCodeState* state);
-	int integer_ToString(FunctionData* __this, LogicCodeState* state);
+	int integer_Abs(LogicCodeState* state);
+	int integer_Equals(LogicCodeState* state);
+	int integer_Clamp(LogicCodeState* state);
+	int integer_IsNegative(LogicCodeState* state);
+	int integer_IsPositive(LogicCodeState* state);
+	int integer_Max(LogicCodeState* state);
+	int integer_Min(LogicCodeState* state);
+	int integer_Parse(LogicCodeState* state);
+	int integer_Sign(LogicCodeState* state);
+	int integer_ToString(LogicCodeState* state);
 
-	int number_Abs(FunctionData* __this, LogicCodeState* state);
-	int number_Clamp(FunctionData* __this, LogicCodeState* state);
-	int number_Equals(FunctionData* __this, LogicCodeState* state);
-	int number_IsFinite(FunctionData* __this, LogicCodeState* state);
-	int number_IsInfinity(FunctionData* __this, LogicCodeState* state);
-	int number_IsNaN(FunctionData* __this, LogicCodeState* state);
-	int number_IsNegative(FunctionData* __this, LogicCodeState* state);
-	int number_IsNegativeInfinity(FunctionData* __this, LogicCodeState* state);
-	int number_IsPositive(FunctionData* __this, LogicCodeState* state);
-	int number_IsPositiveInfinity(FunctionData* __this, LogicCodeState* state);
-	int number_Max(FunctionData* __this, LogicCodeState* state);
-	int number_Min(FunctionData* __this, LogicCodeState* state);
-	int number_Parse(FunctionData* __this, LogicCodeState* state);
-	int number_ToString(FunctionData* __this, LogicCodeState* state);
+	int number_Abs(LogicCodeState* state);
+	int number_Clamp(LogicCodeState* state);
+	int number_Equals(LogicCodeState* state);
+	int number_IsFinite(LogicCodeState* state);
+	int number_IsInfinity(LogicCodeState* state);
+	int number_IsNaN(LogicCodeState* state);
+	int number_IsNegative(LogicCodeState* state);
+	int number_IsNegativeInfinity(LogicCodeState* state);
+	int number_IsPositive(LogicCodeState* state);
+	int number_IsPositiveInfinity(LogicCodeState* state);
+	int number_Max(LogicCodeState* state);
+	int number_Min(LogicCodeState* state);
+	int number_Parse(LogicCodeState* state);
+	int number_ToString(LogicCodeState* state);
 
-	int string_byte(FunctionData* __this, LogicCodeState* state);
-	int string_char(FunctionData* __this, LogicCodeState* state);
-	int string_len(FunctionData* __this, LogicCodeState* state);
-	int string_reverse(FunctionData* __this, LogicCodeState* state);
-	int string_lower(FunctionData* __this, LogicCodeState* state);
-	int string_upper(FunctionData* __this, LogicCodeState* state);
+	int string_byte(LogicCodeState* state);
+	int string_char(LogicCodeState* state);
+	int string_len(LogicCodeState* state);
+	int string_reverse(LogicCodeState* state);
+	int string_lower(LogicCodeState* state);
+	int string_upper(LogicCodeState* state);
 
-	int bitset_tostring(FunctionData* __this, LogicCodeState* state);
-	int bitset_parse(FunctionData* __this, LogicCodeState* state);
-	int bitset_len(FunctionData* __this, LogicCodeState* state);
-    int bitset_concat(FunctionData* __this, LogicCodeState* L);
+	int bitset_tostring(LogicCodeState* state);
+	int bitset_parse(LogicCodeState* state);
+	int bitset_len(LogicCodeState* state);
+    int bitset_concat(LogicCodeState* L);
+    int bitset_slice(LogicCodeState* L);
+    int bitset_reverse(LogicCodeState* L);
 
-	void __Inc(std::bitsetdynamic::refcount_ptr_elem& v);
+	void __Inc(std::bitsetdynamic* v);
+    void __Dec(std::bitsetdynamic* v);
 
 	void __Init(LogicCodeState* state);
 	int _Error(LogicCodeState* state,const char* v);

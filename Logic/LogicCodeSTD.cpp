@@ -9,69 +9,86 @@
 #include "LogicCodeExt.h"
 #include <Windows.h>
 #include "LogicDebug.h"
+#include <algorithm>
+#include "BitExtenderConfig.h"
+#include "Shifter.h"
+#include "BitFinder.h"
+#include "BitAdder.h"
+#include "Comparator.h"
 
 using namespace LogicCodeExt;
 
-int LogicCode::Std::And(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::And(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len > 0)
     {
-        auto first = stack.get(0)->GetBitset();
-        auto retv = ObjectHelper::NewBitset(first->size());
-        auto sizeinput = retv->size();
 
-        for (size_t i = 1; i < len; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            auto current = stack.get(i)->GetBitset();
-            if (current->size() == sizeinput)
+            
+            auto retv = ObjectHelper::CopyBitset(first);
+
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
             {
-                for (size_t i = 0; i < sizeinput; i++)
+                auto current = logic_stack_get_bitset(L, i);
+                if (current != NULL && current->size() == sizeinput)
                 {
-                    retv->set(i, first->get(i) && current->get(i));
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set(i, retv->get(i) && current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
                 }
             }
-            else
-            {
-                return 0;
-            }
+            L->stack.push(retv);
+            return 1;
         }
-        L->stack.push(retv);
-        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::Or(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Or(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len > 0)
     {
-        auto first = stack.get(0)->GetBitset();
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-        auto sizeinput = firstparam->size();
-
-        for (size_t i = 1; i < len; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            auto current = stack.get(i)->GetBitset();
-            if (current->size() == sizeinput)
+            auto retv = ObjectHelper::CopyBitset(first);
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
             {
-                for (size_t i = 0; i < sizeinput; i++)
+                auto current = logic_stack_get_bitset(L, i);
+                if (current && current->size() == sizeinput)
                 {
-                    firstparam->set(i, first->get(i) || current->get(i));
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set(i, retv->get(i) || current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
                 }
             }
-            else
-            {
-                return 0;
-            }
+            stack.push(retv);
+            return 1;
         }
-        stack.push(firstparam);
-        return 1;
+
 
     }
     return 0;
@@ -79,177 +96,197 @@ int LogicCode::Std::Or(FunctionData* __this, LogicCodeState* L)
 }
 
 
-int LogicCode::Std::Not(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Not(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
 
-        auto first = stack.get(0)->GetBitset();
-        auto retv = ObjectHelper::NewBitset(first->size());
-
-        auto sizeinput = retv->size();
-
-        for (size_t i = 0; i < sizeinput; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            retv->set(i, !first->get(i));
-        }
-        stack.push(retv);
-        return 1;
+            auto retv = ObjectHelper::CopyBitset(first);
 
-    }
-    return 0;
-}
+            auto sizeinput = retv->size();
 
-int LogicCode::Std::Xor(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len > 0)
-    {
-        auto first = stack.get(0)->GetBitset();
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-
-        auto sizeinput = firstparam->size();
-
-        for (size_t i = 1; i < len; i++)
-        {
-            auto current = stack.get(i)->GetBitset();
-            if (current->size() == sizeinput)
+            for (size_t i = 0; i < sizeinput; i++)
             {
-                for (size_t i = 0; i < sizeinput; i++)
-                {
-                    firstparam->set(i, first->get(i) ^ current->get(i));
-                }
+                retv->set(i, !retv->get(i));
             }
-            else
-            {
-                return 0;
-            }
+            stack.push(retv);
+            return 1;
         }
-        stack.push(firstparam);
-        return 1;
-
-    }
-    return 0;
-}
-
-int LogicCode::Std::Nand(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len > 0)
-    {
-        auto first = stack.get(0)->GetBitset();
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-
-        auto sizeinput = firstparam->size();
-
-        for (size_t i = 1; i < len; i++)
-        {
-            auto current = stack.get(i)->GetBitset();
-            if (current->size() == sizeinput)
-            {
-                for (size_t i = 0; i < sizeinput; i++)
-                {
-                    firstparam->set(i, first->get(i) && current->get(i));
-                }
-            }
-            else
-            {
-                return 0;
-            }
-        }
-        for (size_t i = 0; i < sizeinput; i++)
-        {
-            firstparam->set(i, !firstparam->get(i));
-        }
-        stack.push(firstparam);
-        return 1;
 
 
     }
     return 0;
 }
 
-int LogicCode::Std::Nor(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Xor(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len > 0)
     {
-
-        auto first = stack.getasview<std::bitsetdynamic>(0);
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-
-        auto sizeinput = firstparam->size();
-
-        for (size_t i = 1; i < len; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            auto current = stack.getasview<std::bitsetdynamic>(i);
-            if (current->size() == sizeinput)
+            auto retv = ObjectHelper::CopyBitset(first);
+
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
             {
-                for (size_t i = 0; i < sizeinput; i++)
+                auto current = logic_stack_get_bitset(L, i);
+                if (current != NULL && current->size() == sizeinput)
                 {
-                    firstparam->set((int)i, first->get(i) || current->get(i));
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set(i, retv->get(i) != current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
                 }
             }
-            else
-            {
-                return 0;
-            }
+            stack.push(retv);
+            return 1;
         }
-        for (size_t i = 0; i < sizeinput; i++)
-        {
-            firstparam->set(i, !firstparam->get(i));
-        }
-        stack.push(firstparam);
-        return 1;
 
 
     }
     return 0;
 }
 
-int LogicCode::Std::Xnor(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Nand(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
+    if (len > 0)
+    {
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
+        {
+            auto retv = ObjectHelper::CopyBitset(first);
+
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
+            {
+                auto current = logic_stack_get_bitset(L, i);
+                if (current != NULL && current->size() == sizeinput)
+                {
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set(i, retv->get(i) && current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            for (size_t i = 0; i < sizeinput; i++)
+            {
+                retv->set(i, !retv->get(i));
+            }
+            stack.push(retv);
+            return 1;
+
+
+        }
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::Nor(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
     if (len > 0)
     {
 
-        auto first = stack.getasview<std::bitsetdynamic>(0);
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-
-        auto sizeinput = firstparam->size();
-
-        for (size_t i = 1; i < len; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            auto current = stack.getasview<std::bitsetdynamic>(i);
-            if (current->size() == sizeinput)
+            auto retv = ObjectHelper::CopyBitset(first);
+
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
             {
-                for (size_t i = 0; i < sizeinput; i++)
+                auto current = logic_stack_get_bitset(L, i);
+                if (current->size() == sizeinput)
                 {
-                    firstparam->set(i, first->get(i) ^ current->get(i));
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set((int)i, retv->get(i) || current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
                 }
             }
-            else
+            for (size_t i = 0; i < sizeinput; i++)
             {
-                return 0;
+                retv->set(i, !retv->get(i));
             }
+            stack.push(retv);
+            return 1;
         }
-        for (size_t i = 0; i < sizeinput; i++)
+
+
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::Xnor(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len > 0)
+    {
+
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            firstparam->set(i, !firstparam->get(i));
+            auto retv = ObjectHelper::CopyBitset(first);
+
+            auto sizeinput = retv->size();
+
+            for (size_t i = 1; i < len; i++)
+            {
+                auto current = logic_stack_get_bitset(L, i);
+                if (current->size() == sizeinput)
+                {
+                    for (size_t i = 0; i < sizeinput; i++)
+                    {
+                        retv->set(i, retv->get(i) != current->get(i));
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            for (size_t i = 0; i < sizeinput; i++)
+            {
+                retv->set(i, !retv->get(i));
+            }
+            stack.push(retv);
+            return 1;
         }
-        stack.push(firstparam);
-        return 1;
+
 
 
     }
@@ -285,6 +322,10 @@ int LogicCode::Std::If(LogicCodeState* L, Light::List& current)
         if (condition)
         {
             return Helper::ExecuteInstuctionShared(L, *exp);
+        }
+        else
+        {
+            return 0;
         }
 
 
@@ -394,7 +435,6 @@ int LogicCode::Std::While(LogicCodeState* L, Light::List& current)
 int LogicCode::Std::Fun(LogicCodeState* L, Light::List& current)
 {
     auto instructionsize = current.get_Count();
-    // fun <label> <expression> <instruction>
     if (instructionsize == 4)
     {
         auto fnname = current[1].str;
@@ -403,7 +443,7 @@ int LogicCode::Std::Fun(LogicCodeState* L, Light::List& current)
         auto argscount = argsname->get_Count();
 
         auto fnobj = ObjectHelper::NewFunctionRuntime(L, {});
-        auto& fruntime = fnobj->data()->get_runtimefn();
+        auto& fruntime = fnobj.ToPtr()->get_runtimefn();
 
         fruntime.body = current[3].instruction;
 
@@ -412,7 +452,7 @@ int LogicCode::Std::Fun(LogicCodeState* L, Light::List& current)
             fruntime.argsname.push_back(argsname->at(i)[0].str->data());
         }
 
-        L->scope->SetVar(fnname->data(), fnobj.v);
+        L->scope->SetVar(fnname->data(), fnobj);
         return 0;
     }
     // fun <expression> <instruction>
@@ -422,7 +462,7 @@ int LogicCode::Std::Fun(LogicCodeState* L, Light::List& current)
         auto argscount = argsname->get_Count();
 
         auto fnobj = ObjectHelper::NewFunctionRuntime(L, {});
-        auto& fruntime = fnobj->data()->get_runtimefn();
+        auto& fruntime = fnobj.ToPtr()->get_runtimefn();
 
         fruntime.body = current[2].instruction;
 
@@ -430,7 +470,7 @@ int LogicCode::Std::Fun(LogicCodeState* L, Light::List& current)
         {
             fruntime.argsname.push_back(argsname->at(i)[0].str->data());
         }
-        L->stack.push(fnobj.v);
+        L->stack.push(fnobj);
         return 1;
     }
     return 0;
@@ -468,11 +508,11 @@ int LogicCode::Std::Return(LogicCodeState* L, Light::List& current)
     }
 }
 
-int LogicCode::Std::Print(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Print(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
 
     if (len >= 1)
     {
@@ -530,6 +570,16 @@ void LogicCode::Std::_Print(Object::refcount_ptr_elem& obj)
 
         std::cout << "Function: " << obj.get();
     }
+    else if (obj->CheckType(ObjectType::UserObject))
+    {
+
+        std::cout << "UserObject: " << obj.get();
+    }
+    else if (obj->CheckType(ObjectType::Pointer))
+    {
+
+        std::cout << obj->GetPointer();
+    }
 }
 
 void LogicCode::Std::_Debug_Log(Object::refcount_ptr_elem& obj)
@@ -545,7 +595,7 @@ void LogicCode::Std::_Debug_Log(Object::refcount_ptr_elem& obj)
         auto str = result->to_string();
         LogicDebug::Log(str.c_str());
 
-        
+
     }
     else if (obj->CheckType(ObjectType::Integer))
     {
@@ -561,7 +611,7 @@ void LogicCode::Std::_Debug_Log(Object::refcount_ptr_elem& obj)
         std::string varAsString = std::to_string(result);
         LogicDebug::Log(varAsString.c_str());
 
-        
+
     }
     else if (obj->CheckType(ObjectType::RefBitset))
     {
@@ -580,20 +630,38 @@ void LogicCode::Std::_Debug_Log(Object::refcount_ptr_elem& obj)
     }
     else if (obj->CheckType(ObjectType::Function))
     {
-        char str[30] = {};
+        char str[21] = {};
         auto num = (LogicInteger)obj.get();
-        _i64toa_s(num, str, 30, 16);
+        _i64toa_s(num, str, 21, 16);
 
         LogicDebug::Log("Function: ");
         LogicDebug::Log(str);
     }
+    else if (obj->CheckType(ObjectType::UserObject))
+    {
+
+        char str[21] = {};
+        auto num = (LogicInteger)obj.get();
+        _i64toa_s(num, str, 21, 16);
+
+        LogicDebug::Log("UserObject: ");
+        LogicDebug::Log(str);
+    }
+    else if (obj->CheckType(ObjectType::Pointer))
+    {
+        char str[21] = {};
+        auto num = (LogicInteger)obj->GetPointer();
+        _i64toa_s(num, str, 21, 16);
+        LogicDebug::Log(str);
+
+    }
 }
 
-int LogicCode::Std::Debug_Log(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Debug_Log(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
 
     if (len >= 1)
     {
@@ -613,6 +681,12 @@ int LogicCode::Std::Debug_Log(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
+int LogicCode::Std::Debug_Clear(LogicCodeState* state)
+{
+    LogicDebug::Clear();
+    return 0;
+}
+
 
 int LogicCode::Std::Const(LogicCodeState* L, Light::List& current)
 {
@@ -621,7 +695,7 @@ int LogicCode::Std::Const(LogicCodeState* L, Light::List& current)
     if (instructionsize >= 4)
     {
         auto name = current[1].str;
-        auto type = current[2];
+        auto& type = current[2];
 
         if (type.resultType == Light::ResultType::Operador)
         {
@@ -642,7 +716,7 @@ int LogicCode::Std::Const(LogicCodeState* L, Light::List& current)
                     }
                     return 0;
                 }
-                L->scope->SetConst(name->data(), v2, false);
+                L->scope->SetConst(name->data(), v2);
             }
         }
     }
@@ -656,7 +730,7 @@ int LogicCode::Std::Var(LogicCodeState* L, Light::List& current)
     if (instructionsize >= 4)
     {
         auto name = current[1].str;
-        auto type = current[2];
+        auto& type = current[2];
 
         if (type.resultType == Light::ResultType::Operador)
         {
@@ -688,7 +762,7 @@ int LogicCode::Std::Case(LogicCodeState* L, Light::List& current)
 {
     auto instructionsize = current.get_Count();
 
-    if (instructionsize == 3)
+    if (instructionsize == 4)
     {
         auto bits = Helper::ToObjectFromCommand(L, current[1]);
         auto bits_ = bits->GetBitset();
@@ -723,37 +797,36 @@ int LogicCode::Std::Case(LogicCodeState* L, Light::List& current)
     return 0;
 }
 
-int LogicCode::Std::Buffer(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Buffer(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-
-        auto first = stack.get(0)->GetBitset();
-        auto firstparam = ObjectHelper::NewBitset(first->size());
-        auto firstlen = first->size();
-        for (size_t i = 0; i < firstlen; i++)
+        auto first = logic_stack_get_bitset(L, 0);
+        if (first != NULL)
         {
-            firstparam->set(i, first->get(i));
+            auto bitset = ObjectHelper::CopyBitset(first);
+            stack.push(bitset);
+
         }
-        stack.push(firstparam);
+
         return 1;
 
     }
     return 0;
 }
 
-int LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Zero(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
 
-        auto first = stack.get(0)->GetInteger();
+        auto first = logic_stack_get_integer(L, 0);
         auto ret = ObjectHelper::NewBitset((size_t)first);
         for (uint8_t i = 0; i < first; i++)
         {
@@ -766,15 +839,15 @@ int LogicCode::Std::Zero(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::One(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::One(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
 
-        auto first = stack.get(0)->GetInteger();
+        auto first = logic_stack_get_integer(L, 0);
         auto ret = ObjectHelper::NewBitset((size_t)first);
         for (LogicInteger i = 0; i < first; i++)
         {
@@ -835,20 +908,21 @@ int LogicCode::Std::Ref(LogicCodeState* L, Light::List& current)
     return 0;
 }
 
-int LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* L)
+
+int LogicCode::Std::Mux(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 2)
     {
 
-        auto selectbits = stack.get(0)->GetInteger();
+        auto selectbitset = logic_stack_get_integer(L, 0);
 
         auto lenargs = len - 1;
-        if (selectbits < lenargs)
+        if (selectbitset < lenargs)
         {
-            auto selected = stack.get(selectbits + 1);
+            auto& selected = stack.get(selectbitset + 1);
             stack.push(selected);
             return 1;
         }
@@ -857,25 +931,26 @@ int LogicCode::Std::Mux(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Demux(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 3)
     {
 
-        auto selectbits = stack.get(0)->GetInteger();
-        auto value = stack.get(1);
+        auto selectbitset = logic_stack_get_integer(L, 0);
+
+        auto& value = stack.get(1);
 
 
         auto lenargs = len - 2;
-        if (selectbits < lenargs)
+        if (selectbitset < lenargs)
         {
-
-            auto value_selected = stack.get(selectbits + 2).get();
-            auto refbitset = LogicRefBitset::FromObject(value_selected);
-            refbitset->SetValue(value);
+            auto refbitset = logic_stack_get_refbitset(L, selectbitset + 2);
+            if (refbitset != NULL) {
+                refbitset->SetValue(value);
+            }
             return 0;
         }
 
@@ -883,15 +958,15 @@ int LogicCode::Std::Demux(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::Decoder(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 2)
     {
 
-        auto selectbits = stack.get(0)->GetInteger();
+        auto selectbits = logic_stack_get_integer(L, 0);
 
 
         auto lenargs = len - 1;
@@ -900,11 +975,12 @@ int LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* L)
 
             auto ret = ObjectHelper::NewBitset(true);
 
-            auto value_selected = stack.get(selectbits + 1).get();
-            auto refbitset = LogicRefBitset::FromObject(value_selected);
-            refbitset->SetValue(ret.v);
+            auto refbitset = logic_stack_get_refbitset(L, selectbits + 1);
+            if (refbitset != NULL)
+            {
+                refbitset->SetValue(ret);
+            }
 
-            refbitset->scope->SetVar(refbitset->name.txt, ret.v);
             return 0;
         }
 
@@ -912,278 +988,360 @@ int LogicCode::Std::Decoder(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::BitSelector(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::BitSelector(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 2)
     {
-        auto bits = stack.get(0)->GetBitset();
+        auto bits = logic_stack_get_bitset(L, 0);
 
-        auto selectbits = stack.get(1)->GetInteger();
+        auto selectbits = logic_stack_get_integer(L, 1);
 
-        auto bitssize = bits->size();
-        if (selectbits < bitssize)
+        if (bits != NULL)
         {
-            auto newbit = ObjectHelper::NewBitset(bits->get(selectbits));
-            stack.push(newbit);
-            return 1;
-        }
-
-    }
-    return 0;
-}
-
-int LogicCode::Std::Add(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 2)
-    {
-        auto value1 = stack.get(0)->GetBitset();
-        auto value2 = stack.get(1)->GetBitset();
-        auto value1size = value1->size();
-        auto value2size = value2->size();
-        if (value1size == value2size)
-        {
-            auto result = ObjectHelper::NewBitset(value1size);
-
-            auto CarryIn = false;
-            for (size_t i = 0; i < value1size; i++)
+            auto bitssize = bits->size();
+            if (selectbits < bitssize)
             {
-                auto A = value1->get(i);
-                auto B = value2->get(i);
-                auto CarryOut = A && B || CarryIn && B || CarryIn && A;
-                auto C = !CarryIn && !A && B || !CarryIn && A && !B || CarryIn && !A && !B || CarryIn && A && B;
-
-
-                result->set(i, C);
-                CarryIn = CarryOut;
-
-            }
-
-            stack.push(result);
-            return 1;
-        }
-
-    }
-
-    return 0;
-
-
-}
-
-int LogicCode::Std::Sub(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 2)
-    {
-        auto value1 = stack.get(0)->GetBitset();
-        auto value2 = stack.get(1)->GetBitset();
-        auto value1size = value1->size();
-        auto value2size = value2->size();
-        if (value1size == value2size)
-        {
-            auto result = ObjectHelper::NewBitset(value1size);
-
-
-            auto BorrowIn = false;
-            for (size_t i = 0; i < value1size; i++)
-            {
-                auto A = value1->get(i);
-                auto B = value2->get(i);
-                auto C = !BorrowIn && !A && B || !BorrowIn && A && !B || BorrowIn && !A && !B || BorrowIn && A && B;
-                auto BorrowOut = !A && B || BorrowIn && !A || BorrowIn && B;
-                result->set(i, C);
-
-                BorrowIn = BorrowOut;
-            }
-
-            stack.push(result);
-            return 1;
-        }
-
-    }
-
-    return 0;
-}
-
-int LogicCode::Std::Mul(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 2)
-    {
-        auto value1 = stack.get(0)->GetBitset();
-        auto value2 = stack.get(1)->GetBitset();
-        auto value1size = value1->size();
-        auto value2size = value2->size();
-        if (value1size == value2size)
-        {
-            auto mulresult = value1size * 2;
-            auto result = ObjectHelper::NewBitset(mulresult);
-            auto temp = ObjectHelper::NewBitset(value1size);
-            for (size_t i = 0; i < value1size; i++)
-            {
-                auto bitcurrent2 = value2->get(i);
-                for (size_t i2 = 0; i2 < value1size; i2++)
-                {
-                    auto bitcurrent1 = value1->get(i2);
-                    temp->set(i2, bitcurrent2 && bitcurrent1);
-                }
-                auto CarryIn = false;
-
-                for (size_t i2 = 0; i2 < value1size; i2++)
-                {
-                    auto A = temp->get(i2);
-                    auto B = result->get(i2 + i);
-                    result->set(i2 + i, !A && !B && CarryIn ||
-                        !A && B && !CarryIn ||
-                        A && !B && !CarryIn ||
-                        A && B && CarryIn);
-
-                    CarryIn = B && CarryIn ||
-                        A && CarryIn ||
-                        A && B;
-
-                }
-                result->set(i + value1size, CarryIn);
-
-            }
-            stack.push(result);
-            return 1;
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::Div(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 2)
-    {
-        auto value1 = stack.get(0)->GetBitset();
-        auto value2 = stack.get(1)->GetBitset();
-        auto value1size = value1->size();
-        auto value2size = value2->size();
-        if (value1size == value2size)
-        {
-            int sizev1 = 0, sizev2 = 0;
-            for (size_t i = 0; i < value1size; i++)
-            {
-                auto currentvalue1 = value1->get(i);
-                auto currentvalue2 = value2->get(i);
-
-                if (currentvalue1)
-                {
-                    sizev1 = i + 1;
-                }
-                if (currentvalue2)
-                {
-                    sizev2 = i + 1;
-                }
-
-            }
-            if (sizev2 != 0)
-            {
-                if (sizev1 == 0 || sizev2 > sizev1)
-                {
-                    auto retv = ObjectHelper::NewBitset(value1size);
-                    stack.push(retv);
-                    return 1;
-                }
-
-                auto equalsdivsize = sizev2 == sizev1;
-                auto remainder = ObjectHelper::NewBitset(value1size);
-                auto quotient = ObjectHelper::NewBitset(value1size);
-                auto tempsize = equalsdivsize ? (size_t)sizev2 : (size_t)sizev2 + 1;
-                auto temp = std::bitsetdynamic::Make(tempsize);
-
-                size_t i = (equalsdivsize ? 0 : sizev1 - sizev2) + 1;
-
-                auto copyv = equalsdivsize ? tempsize : tempsize - 1;
-                auto startbound = equalsdivsize ? 0 : sizev1 - sizev2;
-                for (size_t i2 = 0; i2 < copyv; i2++)
-                {
-                    remainder->set(i2, value1->get(startbound + i2));
-                }
-
-                while (i > 0)
-                {
-                    auto iv = i - 1;
-                    bool BorrowIn = false;
-                    for (size_t i2 = 0; i2 < tempsize; i2++)
-                    {
-                        auto A = remainder->get(i2);
-                        auto B = value2->get(i2);
-                        auto C = !BorrowIn && !A && B || !BorrowIn && A && !B || BorrowIn && !A && !B || BorrowIn && A && B;
-                        auto BorrowOut = !A && B || BorrowIn && !A || BorrowIn && B;
-                        temp->set(i2, C);
-
-                        BorrowIn = BorrowOut;
-
-
-                    }
-
-                    if (!BorrowIn)
-                    {
-                        for (size_t i2 = 0; i2 < tempsize; i2++)
-                        {
-                            remainder->set(i2, temp->get(i2));
-                        }
-                    }
-
-
-                    for (size_t i2 = value1size; i2 > 1; i2--)
-                    {
-                        quotient->set(i2 - 1, quotient->get(i2 - 2));
-                    }
-                    quotient->set(0, !BorrowIn);
-                    if (i > 1)
-                    {
-                        for (size_t i2 = tempsize; i2 > 1; i2--)
-                        {
-                            remainder->set(i2 - 1, remainder->get(i2 - 2));
-                        }
-                        remainder->set(0, value1->get(iv - 1));
-                    }
-                    i--;
-
-                }
-
-                if (len >= 3)
-                {
-                    auto value_selected = stack.get(2).get();
-                    auto refbitsett = LogicRefBitset::FromObject(value_selected);
-                    refbitsett->SetValue(remainder.v);
-                }
-                stack.push(quotient);
+                logic_stack_push_bool(L, bits->get(selectbits));
                 return 1;
             }
 
-
-            return _Error(L, "Division by zero");
         }
 
     }
     return 0;
 }
 
-int LogicCode::Std::GetType(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::PriorityDecoder(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto selectbit = logic_stack_get_integer(L, 0);
+        auto max = (size_t)std::pow(2, selectbit);
+        auto argsprioprity = len - 1;
+        size_t maxarg = std::clamp(argsprioprity, (size_t)0, max);
+        auto restante = max - maxarg;
+        bool okret = false;
+        auto bitsetret = ObjectHelper::NewBitset((size_t)selectbit);
+        for (size_t i = 0; i < selectbit; i++)
+        {
+            bitsetret->set(i, true);
+        }
+        for (size_t i = 0; i < restante; i++)
+        {
+            __Dec(bitsetret.ToPtr());
+        }
+        for (size_t i = maxarg; i > 0; i--)
+        {
+            auto enable = logic_stack_get_bool(L, i);
+            if (enable)
+            {
+                okret = true;
+                break;
+            }
+            __Dec(bitsetret.ToPtr());
+
+        }
+        if (okret)
+        {
+            L->stack.push(bitsetret);
+            return 1;
+        }
+        
+    }
+    return 0;
+}
+
+int LogicCode::Std::Add(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
+    if (len == 2)
+    {
+
+        auto value1 = logic_stack_get_bitset(L, 0);
+        auto value2 = logic_stack_get_bitset(L, 1);
+        if (value1 != NULL && value2 != NULL) {
+            auto value1size = value1->size();
+            auto value2size = value2->size();
+            if (value1size == value2size)
+            {
+                auto result = ObjectHelper::NewBitset(value1size);
+
+                auto CarryIn = false;
+                for (size_t i = 0; i < value1size; i++)
+                {
+                    auto A = value1->get(i);
+                    auto B = value2->get(i);
+                    auto CarryOut = A && B || CarryIn && B || CarryIn && A;
+                    auto C = !CarryIn && !A && B || !CarryIn && A && !B || CarryIn && !A && !B || CarryIn && A && B;
+
+
+                    result->set(i, C);
+                    CarryIn = CarryOut;
+
+                }
+
+                stack.push(result);
+                return 1;
+            }
+        }
+
+
+    }
+
+    return 0;
+
+
+}
+
+int LogicCode::Std::Sub(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len == 2)
+    {
+        auto value1 = logic_stack_get_bitset(L, 0);
+        auto value2 = logic_stack_get_bitset(L, 1);
+        if (value1 != NULL && value2 != NULL)
+        {
+            auto value1size = value1->size();
+            auto value2size = value2->size();
+            if (value1size == value2size)
+            {
+                auto result = ObjectHelper::NewBitset(value1size);
+
+
+                auto BorrowIn = false;
+                for (size_t i = 0; i < value1size; i++)
+                {
+                    auto A = value1->get(i);
+                    auto B = value2->get(i);
+                    auto C = !BorrowIn && !A && B || !BorrowIn && A && !B || BorrowIn && !A && !B || BorrowIn && A && B;
+                    auto BorrowOut = !A && B || BorrowIn && !A || BorrowIn && B;
+                    result->set(i, C);
+
+                    BorrowIn = BorrowOut;
+                }
+
+                stack.push(result);
+                return 1;
+            }
+        }
+
+
+    }
+
+    return 0;
+}
+
+int LogicCode::Std::Mul(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len == 2)
+    {
+        auto value1 = logic_stack_get_bitset(L, 0);
+        auto value2 = logic_stack_get_bitset(L, 1);
+        if (value1 != NULL && value2 != NULL)
+        {
+            auto value1size = value1->size();
+            auto value2size = value2->size();
+            if (value1size == value2size)
+            {
+                auto mulresult = value1size * 2;
+                auto result = ObjectHelper::NewBitset(mulresult);
+                auto temp = ObjectHelper::NewBitset(value1size);
+                for (size_t i = 0; i < value1size; i++)
+                {
+                    auto bitcurrent2 = value2->get(i);
+                    for (size_t i2 = 0; i2 < value1size; i2++)
+                    {
+                        auto bitcurrent1 = value1->get(i2);
+                        temp->set(i2, bitcurrent2 && bitcurrent1);
+                    }
+                    auto CarryIn = false;
+
+                    for (size_t i2 = 0; i2 < value1size; i2++)
+                    {
+                        auto A = temp->get(i2);
+                        auto B = result->get(i2 + i);
+                        result->set(i2 + i, !A && !B && CarryIn ||
+                            !A && B && !CarryIn ||
+                            A && !B && !CarryIn ||
+                            A && B && CarryIn);
+
+                        CarryIn = B && CarryIn ||
+                            A && CarryIn ||
+                            A && B;
+
+                    }
+                    result->set(i + value1size, CarryIn);
+
+                }
+                stack.push(result);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::Div(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 2)
+    {
+        auto value1 = logic_stack_get_bitset(L, 0);
+        auto value2 = logic_stack_get_bitset(L, 1);
+        if (value1 != NULL && value2 == NULL)
+        {
+            auto value1size = value1->size();
+            auto value2size = value2->size();
+            if (value1size == value2size)
+            {
+                int sizev1 = 0, sizev2 = 0;
+                for (size_t i = 0; i < value1size; i++)
+                {
+                    auto currentvalue1 = value1->get(i);
+                    auto currentvalue2 = value2->get(i);
+
+                    if (currentvalue1)
+                    {
+                        sizev1 = i + 1;
+                    }
+                    if (currentvalue2)
+                    {
+                        sizev2 = i + 1;
+                    }
+
+                }
+                if (sizev2 != 0)
+                {
+                    if (sizev1 == 0 || sizev2 > sizev1)
+                    {
+                        auto retv = ObjectHelper::NewBitset(value1size);
+                        stack.push(retv);
+                        return 1;
+                    }
+
+                    auto equalsdivsize = sizev2 == sizev1;
+                    auto remainder = ObjectHelper::NewBitset(value1size);
+                    auto quotient = ObjectHelper::NewBitset(value1size);
+                    auto tempsize = equalsdivsize ? (size_t)sizev2 : (size_t)sizev2 + 1;
+                    auto temp = std::bitsetdynamic::Make(tempsize);
+
+                    size_t i = (equalsdivsize ? 0 : sizev1 - sizev2) + 1;
+
+                    auto copyv = equalsdivsize ? tempsize : tempsize - 1;
+                    auto startbound = equalsdivsize ? 0 : sizev1 - sizev2;
+                    for (size_t i2 = 0; i2 < copyv; i2++)
+                    {
+                        remainder->set(i2, value1->get(startbound + i2));
+                    }
+
+                    while (i > 0)
+                    {
+                        auto iv = i - 1;
+                        bool BorrowIn = false;
+                        for (size_t i2 = 0; i2 < tempsize; i2++)
+                        {
+                            auto A = remainder->get(i2);
+                            auto B = value2->get(i2);
+                            auto C = !BorrowIn && !A && B || !BorrowIn && A && !B || BorrowIn && !A && !B || BorrowIn && A && B;
+                            auto BorrowOut = !A && B || BorrowIn && !A || BorrowIn && B;
+                            temp->set(i2, C);
+
+                            BorrowIn = BorrowOut;
+
+
+                        }
+
+                        if (!BorrowIn)
+                        {
+                            for (size_t i2 = 0; i2 < tempsize; i2++)
+                            {
+                                remainder->set(i2, temp->get(i2));
+                            }
+                        }
+
+
+                        for (size_t i2 = value1size; i2 > 1; i2--)
+                        {
+                            quotient->set(i2 - 1, quotient->get(i2 - 2));
+                        }
+                        quotient->set(0, !BorrowIn);
+                        if (i > 1)
+                        {
+                            for (size_t i2 = tempsize; i2 > 1; i2--)
+                            {
+                                remainder->set(i2 - 1, remainder->get(i2 - 2));
+                            }
+                            remainder->set(0, value1->get(iv - 1));
+                        }
+                        i--;
+
+                    }
+
+                    if (len >= 3)
+                    {
+                        auto value_selected = stack.get(2).get();
+                        auto refbitsett = LogicRefBitset::FromObject(value_selected);
+                        refbitsett->SetValue(remainder);
+                    }
+                    stack.push(quotient);
+                    return 1;
+                }
+
+
+                return _Error(L, "Division by zero");
+            }
+        }
+
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::Negator(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto first = stack.get(0);
+        auto value1 = logic_stack_get_bitset(L, 0);
+        if (value1 != NULL)
+        {
+            auto lenvalue = value1->size();
+            auto vret = ObjectHelper::CopyBitset(value1);
+            if (lenvalue > 1)
+            {
+                for (size_t i = 0; i < lenvalue; i++)
+                {
+                    vret->set(i, !vret->get(i));
+                }
+                __Inc(vret.ToPtr());
+            }
+            L->stack.push(vret);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::GetType(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len == 1)
+    {
+        auto& first = stack.get(0);
         const char* v = "None";
         switch (first->type)
         {
@@ -1212,149 +1370,155 @@ int LogicCode::Std::GetType(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-
-int LogicCode::Std::TruthTable(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::IsNone(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 2)
-    {
-        auto argslen = stack.get(1);
-        auto obj = stack.get(0);
-        if (obj && argslen)
-        {
-            auto fn = LogicFunctionObject::FromObject(obj);
-            auto lenargs = argslen->GetInteger();
-            if (fn != NULL)
-            {
-                auto looplen = lenargs * 2;
-                auto inputs = std::bitsetdynamic::Make((size_t)lenargs);
-
-
-
-                for (size_t i = 0; i < looplen; i++)
-                {
-                    for (size_t i2 = 0; i2 < lenargs; i2++)
-                    {
-                        auto currentv = inputs->get(i2);
-                        auto bset = ObjectHelper::NewBitset(currentv);
-                        stack.push(bset);
-                    }
-
-                    stack.push(obj);
-                    Helper::CallFunction(L, lenargs, 0);
-
-
-
-                    __Inc(inputs);
-                }
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::ControlledBuffer(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 2)
-    {
-        auto& arg1 = stack.get(0);
-        auto& arg2 = stack.get(1);
-
-        if (arg1 && arg2)
-        {
-            auto bitset1 = arg1->GetBitset();
-            auto enable = arg2->GetBitset();
-            if (bitset1 != NULL && enable != NULL)
-            {
-                if (enable->get(0))
-                {
-                    auto size = bitset1->size();
-                    auto ret = ObjectHelper::NewBitset(size);
-                    for (size_t i = 0; i < size; i++)
-                    {
-                        ret->set(i, bitset1->get(i));
-                    }
-                    stack.push(ret);
-                }
-                else
-                {
-                    auto ret = ObjectHelper::NewBitset((size_t)0);
-                    stack.push(ret);
-                }
-                return 1;
-
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::ControlledInverter(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 2)
-    {
-        auto& arg1 = stack.get(0);
-        auto& arg2 = stack.get(1);
-
-        if (arg1 && arg2)
-        {
-            auto bitset1 = arg1->GetBitset();
-            auto enable = arg2->GetBitset();
-            if (bitset1 != NULL && enable != NULL)
-            {
-                if (enable->get(0))
-                {
-                    auto size = bitset1->size();
-                    auto ret = ObjectHelper::NewBitset(size);
-                    for (size_t i = 0; i < size; i++)
-                    {
-                        ret->set(i, !bitset1->get(i));
-                    }
-                    stack.push(ret);
-                }
-                else
-                {
-                    auto ret = ObjectHelper::NewBitset((size_t)0);
-                    stack.push(ret);
-                }
-                return 1;
-
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::OddParity(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 1)
+    auto len = logic_stack_len(L);
+    if (len == 1)
     {
         auto& first = stack.get(0);
-        auto firstval = first ? first->GetBitset() : NULL;
+        auto isnone = first ? first->type == ObjectType::None : true;
+        logic_stack_push_bool(L, isnone);
+
+        return 1;
+    }
+    return 0;
+}
+
+int LogicCode::Std::Argslen(LogicCodeState* L)
+{
+    logic_stack_push_integer(L, logic_stack_len(L));
+    return 1;
+}
+
+
+int LogicCode::Std::TruthTable(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
+    if (len >= 2)
+    {
+        // 0 fun , 1 argslen
+        auto fn = logic_stack_get_function(L, 0);
+        auto lenargs = logic_stack_get_integer(L, 1);
+
+        if (fn != NULL)
+        {
+
+            auto looplen = pow(2,lenargs);
+            auto inputs = std::bitsetdynamic::Make((size_t)lenargs);
+
+
+
+
+            for (size_t i = 0; i < looplen; i++)
+            {
+                for (size_t i2 = 0; i2 < lenargs; i2++)
+                {
+                    auto currentv = inputs->get(i2);
+                    logic_stack_push_bool(L, currentv);
+
+                }
+                logic_stack_copy(L, 0);
+                Helper::CallFunction(L, lenargs, 0);
+
+
+
+                __Inc(inputs.get());
+
+            }
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::ControlledBuffer(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 2)
+    {
+        auto bitset1 = logic_stack_get_bitset(L, 0);
+        auto enable = logic_stack_get_bitset(L, 1);
+
+        if (bitset1 != NULL && enable != NULL)
+        {
+
+            if (enable->get(0))
+            {
+                auto ret = ObjectHelper::CopyBitset(bitset1);
+
+                stack.push(ret);
+            }
+            else
+            {
+                auto ret = ObjectHelper::New();
+                stack.push(ret);
+
+            }
+            return 1;
+
+
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::ControlledInverter(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 2)
+    {
+        auto bitset1 = logic_stack_get_bitset(L, 0);
+        auto enable = logic_stack_get_bitset(L, 1);
+
+        if (bitset1 != NULL && enable != NULL)
+        {
+
+            if (enable->get(0))
+            {
+                auto size = bitset1->size();
+                auto ret = ObjectHelper::NewBitset(size);
+                for (size_t i = 0; i < size; i++)
+                {
+                    ret->set(i, !bitset1->get(i));
+                }
+                stack.push(ret);
+            }
+            else
+            {
+                auto ret = ObjectHelper::New();
+                stack.push(ret);
+            }
+            return 1;
+
+
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::OddParity(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto firstval = logic_stack_get_bitset(L, 0);
 
         if (firstval != NULL)
         {
             auto valsize = firstval->size();
-            auto ret = ObjectHelper::NewBitset(valsize);
-            for (size_t i = 0; i < valsize; i++)
-            {
-                ret->set(i, firstval->get(i));
-            }
+            auto ret = ObjectHelper::CopyBitset(firstval);
+
             for (size_t i = 1; i < len; i++)
             {
-                auto& current = stack.get(i);
-                auto currentbitset = current ? current->GetBitset() : NULL;
+
+                auto currentbitset = logic_stack_get_bitset(L, i);
                 if (currentbitset != NULL)
                 {
                     auto currentbitsetlen = currentbitset->size();
@@ -1363,7 +1527,7 @@ int LogicCode::Std::OddParity(FunctionData* __this, LogicCodeState* L)
                         for (size_t i2 = 0; i2 < valsize; i2++)
                         {
                             auto old = ret->get(i2);
-                            auto newvalue = old ^ currentbitset->get(i2);
+                            auto newvalue = old != currentbitset->get(i2);
                             ret->set(i2, newvalue);
                         }
                     }
@@ -1378,15 +1542,15 @@ int LogicCode::Std::OddParity(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::EvenParity(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::EvenParity(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& first = stack.get(0);
-        auto firstval = first ? first->GetBitset() : NULL;
+        auto firstval = logic_stack_get_bitset(L, 0);
+
 
         if (firstval != NULL)
         {
@@ -1398,8 +1562,7 @@ int LogicCode::Std::EvenParity(FunctionData* __this, LogicCodeState* L)
             }
             for (size_t i = 1; i < len; i++)
             {
-                auto& current = stack.get(i);
-                auto currentbitset = current ? current->GetBitset() : NULL;
+                auto currentbitset = logic_stack_get_bitset(L, i);
                 if (currentbitset != NULL)
                 {
                     auto currentbitsetlen = currentbitset->size();
@@ -1408,7 +1571,7 @@ int LogicCode::Std::EvenParity(FunctionData* __this, LogicCodeState* L)
                         for (size_t i2 = 0; i2 < valsize; i2++)
                         {
                             auto old = ret->get(i2);
-                            auto newvalue = old ^ currentbitset->get(i2);
+                            auto newvalue = old != currentbitset->get(i2);
                             ret->set(i2, newvalue);
                         }
                     }
@@ -1423,1047 +1586,853 @@ int LogicCode::Std::EvenParity(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-int LogicCode::Std::function_isNative(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::function_isNative(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto fn = stack.get(0);
-        if (fn)
-        {
-            auto fnobj = LogicFunctionObject::FromObject(fn);
+        auto fn = logic_stack_get_function(L, 0);
 
-            if (fnobj != NULL)
-            {
-                auto fndata = fnobj->data();
-                auto isnative = fndata->type == FunctionData::FunctionType::Native;
-                stack.push(ObjectHelper::NewBitset(isnative));
-                return 1;
-            }
+        if (fn != NULL)
+        {
+            auto isnative = fn->type == FunctionData::FunctionType::Native;
+            logic_stack_push_bool(L, isnative);
+
+            return 1;
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::function_isRuntime(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::function_isRuntime(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto fn = stack.get(0);
-        if (fn)
+        auto fn = logic_stack_get_function(L, 0);
+        if (fn != NULL)
         {
-            auto fnobj = LogicFunctionObject::FromObject(fn);
+            auto isruntime = fn->type == FunctionData::FunctionType::Runtime;
+            logic_stack_push_bool(L, isruntime);
 
-            if (fnobj != NULL)
-            {
-                auto fndata = fnobj->data();
-                auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
-                stack.push(ObjectHelper::NewBitset(isruntime));
-                return 1;
-            }
+            return 1;
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::function_argslen(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::function_argslen(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto fn = stack.get(0);
-        if (fn)
+        auto fn = logic_stack_get_function(L, 0);
+        if (fn != NULL)
         {
-            auto fnobj = LogicFunctionObject::FromObject(fn);
 
-            if (fnobj != NULL)
+            auto isruntime = fn->type == FunctionData::FunctionType::Runtime;
+            if (isruntime)
             {
-                auto fndata = fnobj->data();
-                auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
-                if (isruntime)
-                {
-                    auto& fnruntime = fndata->get_runtimefn();
-                    stack.push(ObjectHelper::NewInteger(fnruntime.argsname.size()));
-                }
-                else
-                {
-                    stack.push(ObjectHelper::NewInteger(0));
-                }
-                return 1;
+                auto& fnruntime = fn->get_runtimefn();
+                logic_stack_push_integer(L, fnruntime.argsname.size());
+
             }
+            else
+            {
+                logic_stack_push_integer(L, -1);
+            }
+            return 1;
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::function_getargname(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::function_getargname(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 2)
     {
-        auto fn = stack.get(0);
-        auto idx = stack.get(1);
-        if (fn && idx)
+        auto fn = logic_stack_get_function(L, 0);
+        auto idx = logic_stack_get_integer(L, 1);
+        if (fn != NULL)
         {
-            auto fnobj = LogicFunctionObject::FromObject(fn);
-            auto idx_n = idx->GetInteger();
-            if (fnobj != NULL)
-            {
-                auto fndata = fnobj->data();
-                auto isruntime = fndata->type == FunctionData::FunctionType::Runtime;
-                if (isruntime)
-                {
-                    auto& fnruntime = fndata->get_runtimefn();
-                    auto& argsname = fnruntime.argsname;
-                    if (idx_n >= 0 && idx_n < argsname.size())
-                    {
-                        auto& str = fnruntime.argsname.at(idx_n);
-                        stack.push(ObjectHelper::NewString(str.c_str()));
-                    }
-                    else
-                    {
-                        stack.push(ObjectHelper::NewString(""));
-                    }
 
+            auto isruntime = fn->type == FunctionData::FunctionType::Runtime;
+            if (isruntime)
+            {
+                auto& fnruntime = fn->get_runtimefn();
+                auto& argsname = fnruntime.argsname;
+                if (idx >= 0 && idx < argsname.size())
+                {
+                    auto& str = fnruntime.argsname.at(idx);
+                    
+                    stack.push(ObjectHelper::NewString(str.c_str()));
                 }
                 else
                 {
                     stack.push(ObjectHelper::NewString(""));
                 }
-                return 1;
+
             }
+            else
+            {
+                stack.push(ObjectHelper::NewString(""));
+            }
+            return 1;
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::refbitset_get(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::refbitset_get(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto refbit = stack.get(0);
-        if (refbit)
+        auto refbit = logic_stack_get_refbitset(L, 0);
+        if (refbit != NULL)
         {
-            auto refbitobj = LogicRefBitset::FromObject(refbit);
-
-            if (refbitobj != NULL)
-            {
-                stack.push(refbitobj->GetValue());
-                return 1;
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::refbitset_set(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 2)
-    {
-        auto refbit = stack.get(0);
-        auto value = stack.get(1);
-
-        if (refbit)
-        {
-            auto refbitobj = LogicRefBitset::FromObject(refbit);
-
-            if (refbitobj != NULL)
-            {
-                refbitobj->SetValue(value);
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::integer_Abs(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 1)
-    {
-        auto numv = stack.get(0);
-        if (numv)
-        {
-            auto num = numv->GetInteger();
-
-            stack.push(ObjectHelper::NewInteger(abs(num)));
+            stack.push(refbit->GetValue());
             return 1;
         }
     }
     return 0;
 }
 
-int LogicCode::Std::integer_Equals(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::refbitset_set(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 2)
     {
-        auto& numv1 = stack.get(0);
-        auto& numv2 = stack.get(1);
+        auto refbit = logic_stack_get_refbitset(L, 0);
+        auto& value = stack.get(1);
 
-        if (numv1 && numv2)
+        if (refbit != NULL)
         {
-            auto num1 = numv1->GetInteger();
-            auto num2 = numv2->GetInteger();
 
-            stack.push(ObjectHelper::NewBitset(num1 == num2));
-            return 1;
+            refbit->SetValue(value);
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::integer_Clamp(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_Abs(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
+    if (len == 1)
+    {
+        auto numv = logic_stack_get_integer(L, 0);
+        logic_stack_push_integer(L, abs(numv));
+        return 1;
+    }
+    return 0;
+}
+
+int LogicCode::Std::integer_Equals(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
+    if (len == 2)
+    {
+        auto num1 = logic_stack_get_integer(L, 0);
+        auto num2 = logic_stack_get_integer(L, 1);
+
+        logic_stack_push_bool(L, num1 == num2);
+        return 1;
+    }
+    return 0;
+}
+
+int LogicCode::Std::integer_Clamp(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
     if (len == 3)
     {
-        auto& numv1 = stack.get(0);
-        auto& numv2 = stack.get(1);
-        auto& numv3 = stack.get(2);
+        auto v = logic_stack_get_integer(L, 0);
+        auto lo = logic_stack_get_integer(L, 1);
+        auto hi = logic_stack_get_integer(L, 2);
 
-        if (numv1 && numv2 && numv3)
-        {
-            auto v = numv1->GetInteger();
-            auto lo = numv2->GetInteger();
-            auto hi = numv3->GetInteger();
+        auto vret = v > hi ? hi : (v < lo ? lo : v);
+        logic_stack_push_integer(L, vret);
 
-            auto vret = v > hi ? hi : (v < lo ? lo : v);
-            stack.push(ObjectHelper::NewInteger(vret));
-            return 1;
-        }
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::integer_IsNegative(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_IsNegative(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto numv = stack.get(0);
-        if (numv)
-        {
-            auto num = numv->GetInteger();
+        auto num = logic_stack_get_integer(L, 0);
 
-            stack.push(ObjectHelper::NewBitset(num < 0));
-            return 1;
-        }
+        logic_stack_push_bool(L,num < 0);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::integer_IsPositive(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_IsPositive(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto numv = stack.get(0);
-        if (numv)
-        {
-            auto num = numv->GetInteger();
+        auto num = logic_stack_get_integer(L, 0);
 
-            stack.push(ObjectHelper::NewBitset(num > 0));
-            return 1;
-        }
+        logic_stack_push_bool(L,num > 0);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::integer_Max(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_Max(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
         bool first = true;
         LogicInteger num = 0;
         for (size_t i = 0; i < len; i++)
         {
-            auto& numv = stack.get(i);
+            auto currentv = logic_stack_get_integer(L, i);
 
-            if (numv)
+            if (first)
             {
-                auto currentv = numv->GetInteger();
-                if (first)
-                {
-                    num = currentv;
+                num = currentv;
+                first = false;
+            }
+            else
+            {
+                num = currentv > num ? currentv : num;
 
-                    first = false;
-                }
-                else
-                {
-                    num = currentv > num ? currentv : num;
-
-                }
             }
 
         }
+        logic_stack_push_integer(L, num);
 
-        stack.push(ObjectHelper::NewInteger(num));
         return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::integer_Min(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_Min(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
         bool first = true;
         LogicInteger num = 0;
         for (size_t i = 0; i < len; i++)
         {
-            auto& numv = stack.get(i);
+            auto currentv = logic_stack_get_integer(L, i);
 
-            if (numv)
+            if (first)
             {
-                auto currentv = numv->GetInteger();
-                if (first)
-                {
-                    num = currentv;
+                num = currentv;
 
-                    first = false;
-                }
-                else
-                {
-                    num = currentv < num ? currentv : num;
+                first = false;
+            }
+            else
+            {
+                num = currentv < num ? currentv : num;
 
-                }
             }
 
         }
+        logic_stack_push_integer(L, num);
 
-        stack.push(ObjectHelper::NewInteger(num));
         return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::integer_Parse(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_Parse(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& strv = stack.get(0);
-        if (strv)
+        auto str = logic_stack_get_string(L, 0);
+        if (str != NULL)
         {
-            auto str = strv->GetString();
-            if (str != NULL)
-            {
-                auto val = atoll(str->txt);
-                stack.push(ObjectHelper::NewInteger(val));
-                return 1;
-            }
+            auto val = atoll(str->txt);
+            logic_stack_push_integer(L, val);
 
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::integer_Sign(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len == 1)
-    {
-        auto& numv = stack.get(0);
-        if (numv)
-        {
-            auto num = numv->GetInteger();
-            auto ret = num == 0 ? 0 : (num < 0 ? -1 : 1);
-
-            stack.push(ObjectHelper::NewInteger(ret));
             return 1;
+
         }
     }
     return 0;
 }
 
-int LogicCode::Std::integer_ToString(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_Sign(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv = stack.get(0);
-        if (numv)
-        {
-            char str[30] = {};
-            auto num = numv->GetInteger();
-            _i64toa_s(num, str, 30, 10);
+        auto num = logic_stack_get_integer(L, 0);
 
-            stack.push(ObjectHelper::NewString(str));
-            return 1;
-        }
+
+
+        auto ret = num == 0 ? 0 : (num < 0 ? -1 : 1);
+
+        logic_stack_push_integer(L, ret);
+
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_Abs(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::integer_ToString(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv = stack.get(0);
-        if (numv)
-        {
-            auto num = numv->GetNumber();
-            auto newret = fabs(num);
+        auto num = logic_stack_get_integer(L, 0);
 
-            stack.push(ObjectHelper::NewNumber(newret));
-            return 1;
-        }
+
+        char str[20] = {};
+        _i64toa_s(num, str, 20, 10);
+
+        logic_stack_push_string(L,str);
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_Clamp(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_Abs(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
+    if (len == 1)
+    {
+        auto num = logic_stack_get_number(L, 0);
+
+        auto newret = fabs(num);
+
+        stack.push(ObjectHelper::NewNumber(newret));
+        return 1;
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::number_Clamp(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
     if (len == 3)
     {
-        auto& numv1 = stack.get(0);
-        auto& numv2 = stack.get(1);
-        auto& numv3 = stack.get(2);
+        auto num = logic_stack_get_number(L, 0);
+        auto minnum = logic_stack_get_number(L, 1);
+        auto maxnum = logic_stack_get_number(L, 2);
 
-        if (numv1 && numv2 && numv3)
-        {
-            auto num = numv1->GetNumber();
-            auto minnum = numv2->GetNumber();
-            auto maxnum = numv3->GetNumber();
-
-            auto newret = num > maxnum ? maxnum : num < minnum ? minnum : num;
-
-            stack.push(ObjectHelper::NewNumber(newret));
-            return 1;
-        }
+        auto newret = num > maxnum ? maxnum : num < minnum ? minnum : num;
+        logic_stack_push_number(L,newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_Equals(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_Equals(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 2)
     {
-        auto& numv1 = stack.get(0);
-        auto& numv2 = stack.get(1);
+        auto v1 = logic_stack_get_number(L, 0);
+        auto v2 = logic_stack_get_number(L, 1);
 
-        if (numv1 && numv2)
-        {
-            auto v1 = numv1->GetNumber();
-            auto v2 = numv2->GetNumber();
+        auto newret = v1 == v2;
 
-            auto newret = v1 == v2;
-
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        logic_stack_push_number(L, newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsFinite(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsFinite(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = std::isfinite(v1);
+        auto newret = std::isfinite(v1);
 
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        logic_stack_push_bool(L, newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsInfinity(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsInfinity(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = std::isinf(v1);
+        auto newret = std::isinf(v1);
 
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        logic_stack_push_bool(L, newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsNaN(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsNaN(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = std::isnan(v1);
+        auto newret = std::isnan(v1);
+        logic_stack_push_bool(L, newret);
 
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsNegative(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsNegative(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
+        
+        logic_stack_push_bool(L, newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsNegativeInfinity(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsNegativeInfinity(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = v1 == -std::numeric_limits<double>::infinity();
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+        auto newret = v1 == -std::numeric_limits<double>::infinity();
+        logic_stack_push_bool(L, newret);
+        return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsPositive(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsPositive(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
-            stack.push(ObjectHelper::NewBitset(!newret));
-            return 1;
-        }
+
+        auto newret = ((*(LogicInteger*)(&v1)) & 0x7FFFFFFFFFFFFFFFL) > 0x7FF0000000000000L;
+        logic_stack_push_bool(L, !newret);
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_IsPositiveInfinity(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_IsPositiveInfinity(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            auto newret = v1 == std::numeric_limits<double>::infinity();
-            stack.push(ObjectHelper::NewBitset(newret));
-            return 1;
-        }
+
+        auto newret = v1 == std::numeric_limits<double>::infinity();
+        logic_stack_push_bool(L, newret);
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_Max(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_Max(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
+        auto newret = v1;
+
+        for (size_t i = 1; i < len; i++)
         {
-            auto v1 = numv1->GetNumber();
-            auto newret = v1;
 
-            for (size_t i = 1; i < len; i++)
-            {
-                auto& numcurrent = stack.get(i);
+            auto vcurrent = logic_stack_get_number(L, i);
+            newret = vcurrent > newret ? vcurrent : newret;
 
-                if (numcurrent)
-                {
-                    auto vcurrent = numcurrent->GetNumber();
-                    newret = vcurrent > newret ? vcurrent : newret;
-                }
-            }
 
-            stack.push(ObjectHelper::NewNumber(newret));
-            return 1;
         }
+        logic_stack_push_number(L, newret);
+
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_Min(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_Min(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
+
+        auto newret = v1;
+
+        for (size_t i = 1; i < len; i++)
         {
-            auto v1 = numv1->GetNumber();
-            auto newret = v1;
+            auto vcurrent = logic_stack_get_number(L, i);
 
-            for (size_t i = 1; i < len; i++)
-            {
-                auto& numcurrent = stack.get(i);
 
-                if (numcurrent)
-                {
-                    auto vcurrent = numcurrent->GetNumber();
-                    newret = vcurrent < newret ? vcurrent : newret;
-                }
-            }
+            newret = vcurrent < newret ? vcurrent : newret;
 
-            stack.push(ObjectHelper::NewNumber(newret));
-            return 1;
         }
+
+        logic_stack_push_number(L, newret);
+
+        return 1;
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_Parse(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_Parse(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_string(L, 0);
 
-        if (numv1)
+        if (v1 != NULL)
         {
-            auto v1 = numv1->GetString();
-            if (v1 != NULL)
-            {
-                auto newret = std::atof(v1->txt);
-                stack.push(ObjectHelper::NewNumber(newret));
-                return 1;
-            }
-
+            auto newret = std::atof(v1->txt);
+            logic_stack_push_number(L, newret);
+            return 1;
         }
+
+
     }
     return 0;
 }
 
-int LogicCode::Std::number_ToString(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::number_ToString(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len == 1)
     {
-        auto& numv1 = stack.get(0);
+        auto v1 = logic_stack_get_number(L, 0);
 
-        if (numv1)
-        {
-            auto v1 = numv1->GetNumber();
-            char str[20] = {};
-            sprintf_s(&str[0], 20, "%f", v1);
-            stack.push(ObjectHelper::NewString(str));
-            return 1;
+        char str[20] = {};
+        sprintf_s(&str[0], 20, "%f", v1);
+        logic_stack_push_string(L, str);
+        return 1;
 
-        }
+
     }
     return 0;
 }
 
-int LogicCode::Std::string_byte(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::string_byte(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& arg1 = stack.get(0);
+        auto v1 = logic_stack_get_string(L, 0);
 
-        if (arg1)
+
+        LogicInteger idx = 0;
+        if (len >= 2)
         {
-            auto v1 = arg1->GetString();
-            LogicInteger idx = 0;
-            if (len >= 2)
-            {
-                auto& arg2 = stack.get(1);
-                idx = arg2 ? arg2->GetInteger() : 0;
-            }
-            if (v1 != NULL)
-            {
-                if (idx < 0 || idx > v1->size)
-                {
-                    stack.push(ObjectHelper::New());
-                }
-                else
-                {
-                    stack.push(ObjectHelper::NewInteger(v1->txt[idx]));
-                }
-                return 1;
-            }
-
+            idx = logic_stack_get_integer(L, 1);
         }
-    }
-    return 0;
-}
-
-int LogicCode::Std::string_char(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 1)
-    {
-        auto& arg1 = stack.get(0);
-
-        if (arg1)
+        if (v1 != NULL)
         {
-            auto v1 = arg1->GetString();
-            LogicInteger idx = 0;
-            if (len >= 2)
+            if (idx < 0 || idx > v1->size)
             {
-                auto& arg2 = stack.get(1);
-                idx = arg2 ? arg2->GetInteger() : 0;
-            }
-            if (v1 != NULL)
-            {
-                if (idx < 0 || idx > v1->size)
-                {
-                    stack.push(ObjectHelper::New());
-                }
-                else
-                {
-                    const char current[2] = { v1->txt[idx],'\0' };
-                    stack.push(ObjectHelper::NewString(current));
-                }
-                return 1;
-            }
-
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::string_len(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 1)
-    {
-        auto& arg1 = stack.get(0);
-
-        if (arg1)
-        {
-            auto str = arg1->GetString();
-            size_t len = 0;
-            if (str != NULL)
-            {
-                len = str->size;
-            }
-            stack.push(ObjectHelper::NewInteger(len));
-            return 1;
-        }
-    }
-    return 0;
-
-}
-
-int LogicCode::Std::string_reverse(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 1)
-    {
-        auto& arg1 = stack.get(0);
-
-        if (arg1)
-        {
-            auto str = arg1->GetString();
-            if (str != NULL)
-            {
-                auto len_str = str->size;
-                auto end_str = len_str - 1;
-                auto strret = ObjectHelper::NewStringLen(len_str);
-                auto buff = (char*)strret->txt;
-                for (size_t i = 0; i < len_str; i++)
-                {
-                    auto current = str->txt[end_str - 1];
-                    buff[i] = current;
-                }
-                stack.push(strret);
+                logic_stack_push_none(L);
             }
             else
             {
-                stack.push(ObjectHelper::New());
+                logic_stack_push_integer(L, v1->txt[idx]);
             }
             return 1;
         }
+
+
     }
     return 0;
 }
 
-int LogicCode::Std::string_lower(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::string_char(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& arg1 = stack.get(0);
+        auto v1 = logic_stack_get_string(L, 0);
 
-        if (arg1)
+
+        LogicInteger idx = 0;
+        if (len >= 2)
         {
-            auto str = arg1->GetString();
-            if (str != NULL)
+            idx = logic_stack_get_integer(L, 1);
+
+        }
+        if (v1 != NULL)
+        {
+            if (idx < 0 || idx > v1->size)
             {
-                auto len_str = str->size;
-                auto strret = ObjectHelper::NewStringLen(len_str);
-                auto buff = (char*)strret->txt;
-                for (size_t i = 0; i < len_str; i++)
-                {
-                    auto current = str->txt[i];
-                    buff[i] = tolower(current);
-                }
-                stack.push(strret);
+                logic_stack_push_none(L);
             }
             else
             {
-                stack.push(ObjectHelper::New());
+                const char current[2] = { v1->txt[idx],'\0' };
+                logic_stack_push_string(L,current);
             }
             return 1;
         }
+
+
     }
     return 0;
 }
 
-int LogicCode::Std::string_upper(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::string_len(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& arg1 = stack.get(0);
+        auto str = logic_stack_get_string(L, 0);
 
 
-        if (arg1)
+        size_t len = 0;
+        if (str != NULL)
         {
-            auto str = arg1->GetString();
-            if (str != NULL)
+            len = str->size;
+        }
+        logic_stack_push_integer(L,len);
+        return 1;
+
+    }
+    return 0;
+
+}
+
+int LogicCode::Std::string_reverse(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto str = logic_stack_get_string(L, 0);
+
+        if (str != NULL)
+        {
+            auto len_str = str->size;
+            auto end_str = len_str - 1;
+            auto strret = ObjectHelper::NewStringLen(len_str);
+            auto buff = (char*)strret->txt;
+            for (size_t i = 0; i < len_str; i++)
             {
-                auto len_str = str->size;
-                auto strret = ObjectHelper::NewStringLen(len_str);
-                auto buff = (char*)strret->txt;
-                for (size_t i = 0; i < len_str; i++)
-                {
-                    auto current = str->txt[i];
-                    buff[i] = toupper(current);
-                }
-                stack.push(strret);
+                auto current = str->txt[end_str - i];
+                buff[i] = current;
             }
-            else
+            stack.push(strret);
+        }
+        else
+        {
+            logic_stack_push_none(L);
+        }
+        return 1;
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::string_lower(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto str = logic_stack_get_string(L, 0);
+
+
+        if (str != NULL)
+        {
+            auto len_str = str->size;
+            auto strret = ObjectHelper::NewStringLen(len_str);
+            auto buff = (char*)strret->txt;
+            for (size_t i = 0; i < len_str; i++)
             {
-                stack.push(ObjectHelper::New());
+                auto current = str->txt[i];
+                buff[i] = tolower(current);
             }
+            stack.push(strret);
+        }
+        else
+        {
+            logic_stack_push_none(L);
+        }
+        return 1;
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::string_upper(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+
+        auto str = logic_stack_get_string(L, 0);
+
+
+        if (str != NULL)
+        {
+            auto len_str = str->size;
+            auto strret = ObjectHelper::NewStringLen(len_str);
+            auto buff = (char*)strret->txt;
+            for (size_t i = 0; i < len_str; i++)
+            {
+                auto current = str->txt[i];
+                buff[i] = toupper(current);
+            }
+            stack.push(strret);
+        }
+        else
+        {
+            logic_stack_push_none(L);
+        }
+        return 1;
+
+    }
+    return 0;
+}
+
+int LogicCode::Std::bitset_tostring(LogicCodeState* L)
+{
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto bitset = logic_stack_get_bitset(L, 0);
+
+        size_t size = bitset->size();
+        if (bitset != NULL)
+        {
+            char* val = new char[size + 1];
+            val[size] = '\0';
+            for (size_t i = 0; i < size; i++)
+            {
+                val[i] = bitset->get(i) ? '1' : '0';
+            }
+            logic_stack_push_string(L, val);
+            delete[] val;
             return 1;
         }
+        else
+        {
+            return _Error(L, "Invalid parameter #1");
+        }
+
     }
     return 0;
 }
 
-int LogicCode::Std::bitset_tostring(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::bitset_parse(LogicCodeState* L)
 {
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
-        auto& arg1 = stack.get(0);
+        auto str = logic_stack_get_string(L, 0);
 
-        if (arg1)
+        size_t size = str->size;
+        if (str != NULL)
         {
-            auto bitset = arg1->GetBitset();
-            size_t size = bitset->size();
-            if (bitset != NULL)
+            auto bitset = ObjectHelper::NewBitset(size);
+            for (size_t i = 0; i < size; i++)
             {
-                char* val = new char[size + 1];
-                val[size] = '\0';
-                for (size_t i = 0; i < size; i++)
-                {
-                    val[i] = bitset->get(i) ? '1' : '0';
-                }
-
-                stack.push(ObjectHelper::NewString(val));
-                delete[] val;
-                return 1;
+                bool currentval = str->txt[i] == '1';
+                bitset->set(i, currentval);
             }
-            else
-            {
-                return _Error(L, "Invalid parameter #1");
-            }
+            stack.push(bitset);
+            return 1;
         }
+        else
+        {
+            return _Error(L, "Invalid parameter #1");
+        }
+
     }
     return 0;
 }
 
-int LogicCode::Std::bitset_parse(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::bitset_len(LogicCodeState* L)
 {
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
-    if (len >= 1)
-    {
-        auto& arg1 = stack.get(0);
-
-        if (arg1)
-        {
-            auto str = arg1->GetString();
-            size_t size = str->size;
-            if (str != NULL)
-            {
-                auto bitset = ObjectHelper::NewBitset(size);
-                for (size_t i = 0; i < size; i++)
-                {
-                    bool currentval = str->txt[i] == '1';
-                    bitset->set(i, currentval);
-                }
-                stack.push(bitset);
-                return 1;
-            }
-            else
-            {
-                return _Error(L, "Invalid parameter #1");
-            }
-        }
-    }
-    return 0;
-}
-
-int LogicCode::Std::bitset_len(FunctionData* __this, LogicCodeState* L)
-{
-    auto& stack = L->stack;
-    auto& scope = L->scope;
-    auto len = stack.sizeoffset();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
         size_t sizeret = 0;
         for (size_t i = 0; i < len; i++)
         {
-            auto& current = stack.get(i);
-            auto val = current ? current->GetBitset() : NULL;
+            auto val = logic_stack_get_bitset(L, i);
 
             if (val != NULL)
             {
                 sizeret += val->size();
             }
         }
-
-        stack.push(ObjectHelper::NewInteger(sizeret));
+        logic_stack_push_integer(L, sizeret);
         return 1;
     }
     return 0;
 }
 
-int LogicCode::Std::bitset_concat(FunctionData* __this, LogicCodeState* L)
+int LogicCode::Std::bitset_concat(LogicCodeState* L)
 {
 
     auto& stack = L->stack;
     auto& scope = L->scope;
-    auto len = stack.size();
+    auto len = logic_stack_len(L);
     if (len >= 1)
     {
         size_t sizeret = 0;
         for (size_t i = 0; i < len; i++)
         {
-            auto& current = stack.get(i);
-            auto val = current ? current->GetBitset() : NULL;
+            auto val = logic_stack_get_bitset(L, i);
+
 
             if (val != NULL)
             {
@@ -2474,8 +2443,7 @@ int LogicCode::Std::bitset_concat(FunctionData* __this, LogicCodeState* L)
         size_t indexcurrent = sizeret - 1;
         for (size_t i = 0; i < len; i++)
         {
-            auto& current = stack.get(i);
-            auto val = current ? current->GetBitset() : NULL;
+            auto val = logic_stack_get_bitset(L, i);
 
             if (val != NULL)
             {
@@ -2496,7 +2464,63 @@ int LogicCode::Std::bitset_concat(FunctionData* __this, LogicCodeState* L)
     return 0;
 }
 
-void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
+int LogicCode::Std::bitset_slice(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 2)
+    {
+        auto bits = logic_stack_get_bitset(L, 0);
+        auto start = logic_stack_get_integer(L,1);
+        if (bits != NULL)
+        {
+            auto bitslen = bits->size();
+            auto end = len >= 3 ? logic_stack_get_integer(L, 2) : bitslen;
+
+            auto sizeretbitset = end - start;
+            if (sizeretbitset > 0 && sizeretbitset <= bitslen)
+            {
+                auto ret = ObjectHelper::NewBitset((size_t)sizeretbitset);
+
+                for (size_t i = 0; i < sizeretbitset; i++)
+                {
+                    ret->set(i, bits->get(start + i));
+                }
+                stack.push(ret);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int LogicCode::Std::bitset_reverse(LogicCodeState* L)
+{
+    auto& stack = L->stack;
+    auto& scope = L->scope;
+    auto len = logic_stack_len(L);
+    if (len >= 1)
+    {
+        auto bits = logic_stack_get_bitset(L, 0);
+        if (bits != NULL)
+        {
+            auto bits_size = bits->size();
+            auto ret = ObjectHelper::NewBitset(bits_size);
+            auto bits_last = bits_size - 1;
+            for (size_t i = 0; i < bits_size; i++)
+            {
+                ret->set(i, bits->get(bits_last - i));
+            }
+            stack.push(ret);
+            return 1;
+        }
+        
+    }
+    return 0;
+}
+
+void LogicCode::Std::__Inc(std::bitsetdynamic* v)
 {
     auto size = v->size();
     auto CarryIn = false;
@@ -2514,6 +2538,24 @@ void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
     }
 }
 
+void LogicCode::Std::__Dec(std::bitsetdynamic* v)
+{
+    auto size = v->size();
+    auto BorrowIn = false;
+    for (size_t i = 0; i < size; i++)
+    {
+        auto A = v->get(i);
+        auto B = i == 0;
+        auto BorrowOut = !A && B || BorrowIn && !A || BorrowIn && B;
+        auto C = !BorrowIn && !A && B || !BorrowIn && A && !B || BorrowIn && !A && !B || BorrowIn && A && B;
+
+
+        v->set(i, C);
+        BorrowIn = BorrowOut;
+
+    }
+}
+
 
 
 
@@ -2522,16 +2564,25 @@ void LogicCode::Std::__Inc(std::bitsetdynamic::refcount_ptr_elem& v)
 void LogicCode::Std::__Init(LogicCodeState* L)
 {
 
-    logic_scope_setvar_fnnative(L, "type", GetType);
+        
+    // wiring
+    Wiring::BitExtender::Init(L);
+
 
     // io functions 
     logic_scope_setvar_fnnative(L, "print", Print);
     logic_scope_setvar_fnnative(L, "debug.log", Debug_Log);
+    logic_scope_setvar_fnnative(L, "debug.clear", Debug_Clear);
 
     // general function
     logic_scope_setvar_fnnative(L, "type", GetType);
+    logic_scope_setvar_fnnative(L, "argslen", Argslen);
+    logic_scope_setvar_fnnative(L, "isnone", IsNone);
+    logic_scope_setvar_fnnative(L, "zero", Zero);
+    logic_scope_setvar_fnnative(L, "one", One);
+    logic_scope_setvar_fnnative(L, "truthtable", TruthTable);
 
-    // logisim functions
+    // logisim gates functions
     logic_scope_setvar_fnnative(L, "and", And);
     logic_scope_setvar_fnnative(L, "or", Or);
     logic_scope_setvar_fnnative(L, "not", Not);
@@ -2540,21 +2591,30 @@ void LogicCode::Std::__Init(LogicCodeState* L)
     logic_scope_setvar_fnnative(L, "nor", Nor);
     logic_scope_setvar_fnnative(L, "xnor", Xnor);
     logic_scope_setvar_fnnative(L, "buffer", Buffer);
-    logic_scope_setvar_fnnative(L, "zero", Zero);
-    logic_scope_setvar_fnnative(L, "one", One);
-    logic_scope_setvar_fnnative(L, "mux", Mux);
-    logic_scope_setvar_fnnative(L, "demux", Demux);
-    logic_scope_setvar_fnnative(L, "decoder", Decoder);
-    logic_scope_setvar_fnnative(L, "bitselector", BitSelector);
-    logic_scope_setvar_fnnative(L, "add", Add);
-    logic_scope_setvar_fnnative(L, "sub", Sub);
-    logic_scope_setvar_fnnative(L, "mul", Mul);
-    logic_scope_setvar_fnnative(L, "div", Div);
-    logic_scope_setvar_fnnative(L, "truthtable", TruthTable);
     logic_scope_setvar_fnnative(L, "controlledbuffer", ControlledBuffer);
     logic_scope_setvar_fnnative(L, "controlledinverter", ControlledInverter);
     logic_scope_setvar_fnnative(L, "oddparity", OddParity);
     logic_scope_setvar_fnnative(L, "evenparity", EvenParity);
+
+    // logisim plexers functions
+    logic_scope_setvar_fnnative(L, "mux", Mux);
+    logic_scope_setvar_fnnative(L, "demux", Demux);
+    logic_scope_setvar_fnnative(L, "decoder", Decoder);
+    logic_scope_setvar_fnnative(L, "bitselector", BitSelector);
+    logic_scope_setvar_fnnative(L, "prioritydecoder", PriorityDecoder);
+
+
+
+    // logisim arith  functions
+    logic_scope_setvar_fnnative(L, "add", Add);
+    logic_scope_setvar_fnnative(L, "sub", Sub);
+    logic_scope_setvar_fnnative(L, "mul", Mul);
+    logic_scope_setvar_fnnative(L, "div", Div);
+    logic_scope_setvar_fnnative(L, "negator", Negator);
+    Arithmetic::Shifter::Init(L);
+    Arithmetic::BitFinder::Init(L);
+    Arithmetic::BitAdder::Init(L);
+    Arithmetic::Comparator::Init(L);
 
     // function api
     logic_scope_setvar_fnnative(L, "function.isNative", function_isNative);
@@ -2616,6 +2676,8 @@ void LogicCode::Std::__Init(LogicCodeState* L)
     logic_scope_setvar_fnnative(L, "bitset.parse", bitset_parse);
     logic_scope_setvar_fnnative(L, "bitset.len", bitset_len);
     logic_scope_setvar_fnnative(L, "bitset.concat", bitset_concat);
+    logic_scope_setvar_fnnative(L, "bitset.slice", bitset_slice);
+    logic_scope_setvar_fnnative(L, "bitset.reverse", bitset_reverse);
 
 
 }

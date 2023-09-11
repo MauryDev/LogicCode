@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Wiring">
+      <UniqueIdentifier>{336ffe35-78f4-42e4-8b43-b07dfaca4500}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arithmetic">
+      <UniqueIdentifier>{a320b06a-2318-483a-bf41-3566c1a59d6c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Logic.cpp">
@@ -41,6 +47,24 @@
     </ClCompile>
     <ClCompile Include="LogicDebug.cpp">
       <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="LogicUserObject.cpp">
+      <Filter>Arquivos de Origem</Filter>
+    </ClCompile>
+    <ClCompile Include="BitExtenderConfig.cpp">
+      <Filter>Wiring</Filter>
+    </ClCompile>
+    <ClCompile Include="Shifter.cpp">
+      <Filter>Arithmetic</Filter>
+    </ClCompile>
+    <ClCompile Include="BitFinder.cpp">
+      <Filter>Arithmetic</Filter>
+    </ClCompile>
+    <ClCompile Include="BitAdder.cpp">
+      <Filter>Arithmetic</Filter>
+    </ClCompile>
+    <ClCompile Include="Comparator.cpp">
+      <Filter>Arithmetic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -96,6 +120,24 @@
     </ClInclude>
     <ClInclude Include="LogicDebug.h">
       <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="LogicUserObject.h">
+      <Filter>Arquivos de Cabeçalho</Filter>
+    </ClInclude>
+    <ClInclude Include="BitExtenderConfig.h">
+      <Filter>Wiring</Filter>
+    </ClInclude>
+    <ClInclude Include="Shifter.h">
+      <Filter>Arithmetic</Filter>
+    </ClInclude>
+    <ClInclude Include="BitFinder.h">
+      <Filter>Arithmetic</Filter>
+    </ClInclude>
+    <ClInclude Include="BitAdder.h">
+      <Filter>Arithmetic</Filter>
+    </ClInclude>
+    <ClInclude Include="Comparator.h">
+      <Filter>Arithmetic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

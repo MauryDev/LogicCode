@@ -14,15 +14,15 @@ namespace LogicCode
 		{
 			return scope->GetValue(name.txt);
 		}
-		void SetValue(Object::refcount_ptr_elem& v,bool checkparent = true)
+		void SetValue(Object::refcount_ptr_elem& v,bool checkparent = false)
 		{
 			scope->SetVar(name.txt,v, checkparent);
 		}
 		static LogicRefBitset* FromObject(LogicCode::Object& _this) {
-			return (_this.type == ObjectType::RefBitset ? _this.ptr<LogicRefBitset>() : nullptr);
-		}
+            return FromObject(&_this);
+        }
 		static LogicRefBitset* FromObject(LogicCode::Object* _this) {
-			return FromObject(*_this);
+            return (_this->type == ObjectType::RefBitset ? _this->ptr<LogicRefBitset>() : nullptr);
 		}
 		static LogicRefBitset* FromObject(Object::refcount_ptr_elem& _this) {
 			return FromObject(_this.get());

@@ -1,0 +1,9 @@
+prioritydecoder(int 1,0,1);
+
+spliter(a,ref a,ref b,ref c);
+bitextender(a,int 5);
+negator(10)
+
+comparator(10)
+
+shifter(10);

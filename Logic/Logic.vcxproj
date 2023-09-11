@@ -27,7 +27,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -158,6 +158,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BitAdder.cpp" />
+    <ClCompile Include="BitExtenderConfig.cpp" />
+    <ClCompile Include="BitFinder.cpp" />
+    <ClCompile Include="Comparator.cpp" />
     <ClCompile Include="Logic.cpp" />
     <ClCompile Include="LogicCodeExt.cpp" />
     <ClCompile Include="LogicCodeHelper.cpp" />
@@ -167,6 +171,8 @@
     <ClCompile Include="LogicObject.cpp" />
     <ClCompile Include="LogicObjectHelper.cpp" />
     <ClCompile Include="LogicStructs.hpp" />
+    <ClCompile Include="LogicUserObject.cpp" />
+    <ClCompile Include="Shifter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="Script.lc">
@@ -177,7 +183,11 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitAdder.h" />
+    <ClInclude Include="BitExtenderConfig.h" />
+    <ClInclude Include="BitFinder.h" />
     <ClInclude Include="bitsetdynamic.hpp" />
+    <ClInclude Include="Comparator.h" />
     <ClInclude Include="Logic.h" />
     <ClInclude Include="LogicCodeExt.h" />
     <ClInclude Include="LogicCodeHelper.h" />
@@ -192,7 +202,9 @@
     <ClInclude Include="LogicRefBitset.hpp" />
     <ClInclude Include="LogicState.hpp" />
     <ClInclude Include="LogicString.hpp" />
+    <ClInclude Include="LogicUserObject.h" />
     <ClInclude Include="refcount_ptr.hpp" />
+    <ClInclude Include="Shifter.h" />
     <ClInclude Include="StackObject.h" />
     <ClInclude Include="VariableData.hpp" />
   </ItemGroup>

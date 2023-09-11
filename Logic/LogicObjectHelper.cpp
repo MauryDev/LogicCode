@@ -1,17 +1,28 @@
 #include "LogicObjectHelper.hpp"
+void LogicCode::ObjectHelper::DefaultBitset_Init()
+{
+    static bool inited = false;
+    if (inited)
+    {
+        return;
+    }
+    size_t sizelen = 1;
+    Bitset_FALSE = NewBitset(sizelen);
+    Bitset_FALSE->set(0, false);
+    Bitset_TRUE = NewBitset(sizelen);
+    Bitset_TRUE->set(0, true);
 
+}
 LogicCode::ObjectView<std::nullptr_t> LogicCode::ObjectHelper::New()
 {
-	ObjectView<std::nullptr_t> variable = { Object::refcount_ptr_elem::make((size_t)0) };
-	variable.v->type = ObjectType::None;
-	return variable;
+    return {};
 }
 
 LogicCode::ObjectView<LogicCode::LogicNumber> LogicCode::ObjectHelper::NewNumber(LogicNumber val)
 {
 	ObjectView<LogicNumber> variable = { Object::refcount_ptr_elem::make((size_t)sizeof(val)) };
 	*variable = val;
-	variable.v->type = ObjectType::Number;
+	variable.set_type(ObjectType::Number);
 	return variable;
 }
 
@@ -19,42 +30,41 @@ LogicCode::ObjectView<LogicCode::LogicInteger> LogicCode::ObjectHelper::NewInteg
 {
 	ObjectView<LogicInteger> variable = { Object::refcount_ptr_elem::make((size_t)sizeof(val)) };
 	*variable = val;
-	variable.v->type = ObjectType::Integer;
+	variable.set_type(ObjectType::Integer);
 	return variable;
 }
 
-LogicCode::ObjectView<std::bitsetdynamic> LogicCode::ObjectHelper::NewBitset(size_t len)
+LogicCode::ObjectView<LogicCode::LogicBitset> LogicCode::ObjectHelper::NewBitset(size_t len)
 {
-	auto lenarr = std::bitsetdynamic::GetBufferSize(len);
-	auto lenobj = std::bitsetdynamic::GetMemorySize(lenarr);
-	ObjectView<std::bitsetdynamic> variable = { Object::refcount_ptr_elem::make(lenobj) };
-	variable.v->type = ObjectType::Bitset;
-
-	auto& bd = variable.v->data<std::bitsetdynamic>();
+	auto lenarr = LogicBitset::GetBufferSize(len);
+	auto lenobj = LogicBitset::GetMemorySize(lenarr);
+	ObjectView<LogicBitset> variable = { Object::refcount_ptr_elem::make(lenobj) };
+	variable.set_type(ObjectType::Bitset);
+   
 	variable->_size = len;
 	
-	memset(variable->data(), 0, sizeof(std::bitsetdynamic::Bits) * lenarr);
+	memset(variable->data(), 0, sizeof(LogicBitset::Bits) * lenarr);
 
 	return variable;
 }
 
-LogicCode::ObjectView<std::bitsetdynamic> LogicCode::ObjectHelper::NewBitset(bool v)
+LogicCode::ObjectView<LogicCode::LogicBitset> LogicCode::ObjectHelper::NewBitset(bool v)
 {
-
-	ObjectView<std::bitsetdynamic> val = NewBitset((size_t)1);
-	val->set(0, v);
-	return val;
+     
+    DefaultBitset_Init();
+	return v ? Bitset_TRUE : Bitset_FALSE;
 }
 
 LogicCode::ObjectView<LogicCode::LogicRefBitset> LogicCode::ObjectHelper::NewRefBitset(const char* key, std::refcount_ptr<VariableData>& state)
 {
 	auto keylen = key == NULL ? 0 : strlen(key);
 	ObjectView<LogicRefBitset> variable = { Object::refcount_ptr_elem::make(sizeof(LogicRefBitset) + keylen + 1) };
-	variable.v->type = ObjectType::RefBitset;
-	auto& refbit = variable.v->data<LogicRefBitset>();
-	refbit.scope = state;
-	refbit.name.size = keylen;
-	memcpy_s((void*)refbit.name.txt, keylen + 1, key, keylen + 1);
+	variable.set_type(ObjectType::RefBitset);
+    auto refbit = variable.ToPtr();
+
+    refbit->scope = state;
+	refbit->name.size = keylen;
+	memcpy_s((void*)refbit->name.txt, keylen + 1, key, keylen + 1);
 
 	return variable;
 }
@@ -65,17 +75,23 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 	if (val != NULL)
 	{
 		size = strlen(val);
-	}
+        ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size + 1 + sizeof(LogicString)) };
+        variable.set_type(ObjectType::String);
+
+        auto str = variable.ToPtr();
+        str->size = size;
+        memcpy((void*)str->txt, val, size + 1);
+
+        return variable;
+    }
+    else
+    {
+
+        return {};
+    }
 
 
-	ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size + 1 + sizeof(LogicString)) };
-	variable.v->type = ObjectType::String;
-
-	auto& str = variable.v->data<LogicString>();
-	str.size = size;
-	memcpy((void*)str.txt, val, size + 1);
-
-	return variable;
+	
 
 }
 
@@ -85,11 +101,10 @@ LogicCode::ObjectView<LogicCode::LogicString> LogicCode::ObjectHelper::NewString
 
 
 	ObjectView<LogicString> variable = { Object::refcount_ptr_elem::make(size + 1 + sizeof(LogicString)) };
-	variable.v->type = ObjectType::String;
+	variable.set_type(ObjectType::String);
 
-	auto& str = variable.v->data<LogicString>();
-	str.size = size;
-	memset((void*)str.txt, 0, size + 1);
+    auto str = variable.ToPtr();
+    str->size = size;
 	return variable;
 }
 
@@ -97,12 +112,12 @@ LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::N
 {
 	auto len = LogicFunctionObject::GetMemorySize(FunctionData::FunctionType::Native);
 	ObjectView<LogicFunctionObject> variable = { Object::refcount_ptr_elem::make(len) };
-	auto logicfnobj = variable->data();
+	auto logicfnobj = variable.ToPtr();
 
 	logicfnobj->type = FunctionData::FunctionType::Native;
 	logicfnobj->parentscope = state->scope;
 	logicfnobj->get_nativefn() = fnative;
-	variable.v->type = ObjectType::Function;
+	variable.set_type(ObjectType::Function);
 	return variable;
 }
 
@@ -115,16 +130,50 @@ LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::N
 {
 	auto len = LogicFunctionObject::GetMemorySize(FunctionData::FunctionType::Runtime);
 	ObjectView<LogicFunctionObject> variable = { Object::refcount_ptr_elem::make(len) };
-	auto logicfnobj = variable->data();
+	auto logicfnobj = variable.ToPtr();
 	logicfnobj->type = FunctionData::FunctionType::Runtime;
 	logicfnobj->parentscope = state->scope;
 	logicfnobj->get_runtimefn() = fruntime;
 	
-	variable.v->type = ObjectType::Function;
+	variable.set_type(ObjectType::Function);
 	return variable;
 }
 
 LogicCode::ObjectView<LogicCode::LogicFunctionObject> LogicCode::ObjectHelper::NewFunctionRuntime(LogicCodeState* state, FunctionData::FunctionRuntime&& fruntime)
 {
 	return NewFunctionRuntime(state,fruntime);
+}
+
+LogicCode::ObjectView<LogicCode::LogicBitset> LogicCode::ObjectHelper::CopyBitset(LogicCode::LogicBitset* bitset)
+{
+    if (bitset == NULL)
+    {
+        return {};
+    }
+    auto len = bitset->size();
+    auto ret = NewBitset(len);
+    for (size_t i = 0; i < len; i++)
+    {
+        ret->set(i, bitset->get(i));
+    }
+	return ret;
+}
+
+LogicCode::ObjectView<LogicCode::LogicPointer> LogicCode::ObjectHelper::NewPointer(void* ptr)
+{
+    ObjectView<LogicPointer> variable = { Object::refcount_ptr_elem::make(sizeof(LogicPointer)) };
+    *variable = ptr;
+    variable.set_type(ObjectType::Pointer);
+
+    return variable;
+}
+
+LogicCode::ObjectView<LogicCode::LogicUserObject> LogicCode::ObjectHelper::NewUserObject(LogicUserClass* klass, size_t len)
+{
+    auto lenmalloc =LogicUserObject::GetMemorySize(len);
+    ObjectView<LogicUserObject> variable = { Object::refcount_ptr_elem::make(lenmalloc) };
+    variable->klass = klass;
+    variable.set_type(ObjectType::UserObject);
+
+	return variable;
 }
